@@ -2,6 +2,12 @@
 /dist
 /node_modules
 
+# eslint
+.eslintcache
+
+# environment
+.env*
+
 # Logs
 logs
 *.log
