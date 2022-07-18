@@ -6,7 +6,8 @@
 .eslintcache
 
 # environment
-.env*
+.env
+.env.test
 
 # Logs
 logs

@@ -13,9 +13,9 @@ import applicationConfig from './application.config';
     }),
     ConfigModule.forFeature(applicationConfig),
     DatabaseModule,
-    AuthenticationModule,
     UserModule,
     RegistrationModule,
+    AuthenticationModule,
   ],
 })
 export class ApplicationModule {}

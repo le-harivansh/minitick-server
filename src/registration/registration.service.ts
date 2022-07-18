@@ -7,10 +7,10 @@ import { RegistrationDto } from './dto/registration.dto';
 export class RegistrationService {
   constructor(private readonly userService: UserService) {}
 
-  async registerUser(registrationDto: RegistrationDto) {
+  async registerUser({ password, ...registrationData }: RegistrationDto) {
     return this.userService.create({
-      ...registrationDto,
-      password: await argon2.hash(registrationDto.password, {
+      ...registrationData,
+      password: await argon2.hash(password, {
         type: argon2.argon2id,
       }),
     });

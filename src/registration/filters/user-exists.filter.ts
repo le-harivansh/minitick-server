@@ -3,7 +3,13 @@ import { Request, Response } from 'express';
 import { MongoServerError } from 'mongodb';
 import { HttpStatus } from '@nestjs/common';
 
-@Catch(MongoServerError)
+/**
+ * This filter is meant to catch MongoServerError.
+ * MongoServerError is not, however, being caught by this filter. A catch-all is therefore being used in the meantime.
+ *
+ * @todo: fix this so that @Catch(MongoServerError) works.
+ */
+@Catch()
 export class UserExistsFilter implements ExceptionFilter {
   catch(exception: MongoServerError, host: ArgumentsHost) {
     const context = host.switchToHttp();
