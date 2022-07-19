@@ -29,7 +29,7 @@ export class AuthenticationService {
     }
   }
 
-  generateAccessToken(userData: Omit<User, 'password'>) {
-    return this.jwtService.sign(userData);
+  generateAccessToken({ username }: Omit<User, 'password'>) {
+    return this.jwtService.sign({ sub: username });
   }
 }

@@ -5,6 +5,7 @@ import { ApplicationModule } from '../src/application.module';
 import { Connection } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { User } from '../src/user/user.schema';
+import { ACCESS_TOKEN_KEY } from '../src/authentication/constants';
 
 describe('Authentication Controller (e2e)', () => {
   let application: INestApplication;
@@ -41,13 +42,17 @@ describe('Authentication Controller (e2e)', () => {
 
     // Password Authentication
     describe('Password Authentication', () => {
-      it('returns an access token when the correct login credentials for an existing user are provided', async () => {
+      it('returns a cookie with the access token when the correct login credentials for an existing user are provided', async () => {
         const response = await request(application.getHttpServer())
           .post('/authentication/login')
           .send(userData);
 
-        expect(response.statusCode).toBe(HttpStatus.CREATED);
-        expect(Object.keys(response.body)).toContainEqual('access_token');
+        expect(response.statusCode).toBe(HttpStatus.OK);
+        expect(
+          response
+            .get('Set-Cookie')
+            .filter((cookie: string) => cookie.startsWith(ACCESS_TOKEN_KEY)),
+        ).not.toHaveLength(0);
       });
 
       it.each([
@@ -72,33 +77,28 @@ describe('Authentication Controller (e2e)', () => {
 
     // JWT Authentication
     describe('JWT Authentication', () => {
-      it('returns success status-code when a correct Bearer token is provided', async () => {
+      it('returns success status-code when a cookie with the correct access-token is provided', async () => {
         const localAuthenticationResponse = await request(
           application.getHttpServer(),
         )
           .post('/authentication/login')
           .send(userData);
 
-        const accessToken: string =
-          localAuthenticationResponse.body.access_token;
-
-        const bearerAuthenticationResponse = await request(
+        const JwtAuthenticationResponse = await request(
           application.getHttpServer(),
         )
           .get('/authentication/status')
-          .set('Authorization', `Bearer ${accessToken}`);
+          .set('Cookie', [...localAuthenticationResponse.get('Set-Cookie')]);
 
-        expect(bearerAuthenticationResponse.statusCode).toBe(HttpStatus.OK);
+        expect(JwtAuthenticationResponse.statusCode).toBe(HttpStatus.OK);
       });
 
       it('returns error status-code when an incorrect Bearer token is provided', async () => {
-        const bearerAuthenticationResponse = await request(
+        const JwtAuthenticationResponse = await request(
           application.getHttpServer(),
-        )
-          .get('/authentication/status')
-          .set('Authorization', 'Bearer WRONG_bearer_authentication_token');
+        ).get('/authentication/status');
 
-        expect(bearerAuthenticationResponse.statusCode).toBe(
+        expect(JwtAuthenticationResponse.statusCode).toBe(
           HttpStatus.UNAUTHORIZED,
         );
       });

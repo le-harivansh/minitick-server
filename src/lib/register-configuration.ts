@@ -23,23 +23,23 @@ export default function registerConfiguration<ConfigObjectType>(
     };
   },
 ) {
-  const createNewObjectUsingProperty = (
-    nestedProperty: string,
+  const filter = (
+    property: 'env' | 'rules',
     transformer = (value: unknown) => value,
   ) =>
     Object.keys(configurationMap)
-      .map((property) => ({
-        [property]: transformer(configurationMap[property][nestedProperty]),
+      .map((key) => ({
+        [key]: transformer(configurationMap[key][property]),
       }))
       .reduce((previous, next) => ({ ...previous, ...next }));
 
   return registerAs(namespace, () => {
     const schema = Joi.object<ConfigObjectType>(
-      createNewObjectUsingProperty('rules') as Joi.SchemaMap<ConfigObjectType>,
+      filter('rules') as Joi.SchemaMap<ConfigObjectType>,
     );
 
     const { value: validatedConfig, error } = schema.validate(
-      createNewObjectUsingProperty(
+      filter(
         'env',
         (environmentVariable: string) => process.env[environmentVariable],
       ),

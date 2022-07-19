@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
-import registerConfiguration from '../helpers/register-configuration';
+import registerConfiguration from '../lib/register-configuration';
 
 export interface AuthenticationConfig {
   jwtSecret: string;

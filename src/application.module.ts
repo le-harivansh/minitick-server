@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as cookieParser from 'cookie-parser';
 import { DatabaseModule } from './database/database.module';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { UserModule } from './user/user.module';
 import { RegistrationModule } from './registration/registration.module';
-import applicationConfig from './application.config';
+import applicationConfig, { ApplicationConfig } from './application.config';
 
 @Module({
   imports: [
@@ -18,4 +19,18 @@ import applicationConfig from './application.config';
     AuthenticationModule,
   ],
 })
-export class ApplicationModule {}
+export class ApplicationModule implements NestModule {
+  constructor(private readonly configService: ConfigService) {}
+
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(
+        cookieParser(
+          this.configService.getOrThrow<ApplicationConfig['cookieSecret']>(
+            'application.cookieSecret',
+          ),
+        ),
+      )
+      .forRoutes('*');
+  }
+}

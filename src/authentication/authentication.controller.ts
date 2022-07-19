@@ -1,25 +1,58 @@
-import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Request,
+  Response,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from 'express';
+import * as ms from 'ms';
 import { AuthenticationService } from './authentication.service';
-import { LocalAuthenticationGuard } from './guards/local-authentication.guard';
-import { JwtAuthenticationGuard } from './guards/jwt-authentication.guard';
-import { Request as ExpressRequest } from 'express';
+import { RequiresCredentials } from './guards/local-authentication.guard';
+import { RequiresAccessToken } from './guards/jwt/access-token-authentication.guard';
 import { User } from 'src/user/user.schema';
+import { ACCESS_TOKEN_KEY } from './constants';
+import { ConfigService } from '@nestjs/config';
+import { AuthenticationConfig } from './authentication.config';
 
 @Controller('authentication')
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly configService: ConfigService,
+  ) {}
 
-  @UseGuards(LocalAuthenticationGuard)
+  @UseGuards(RequiresCredentials)
   @Post('login')
-  login(@Request() request: ExpressRequest) {
-    return {
-      access_token: this.authenticationService.generateAccessToken(
-        request.user as Omit<User, 'password'>,
+  @HttpCode(HttpStatus.OK)
+  login(
+    @Request() request: ExpressRequest,
+    @Response({ passthrough: true }) response: ExpressResponse,
+  ) {
+    const accessToken = this.authenticationService.generateAccessToken(
+      request.user as Omit<User, 'password'>,
+    );
+
+    response.cookie(ACCESS_TOKEN_KEY, accessToken, {
+      secure: true,
+      httpOnly: true,
+      signed: true,
+      maxAge: ms(
+        this.configService.getOrThrow<
+          AuthenticationConfig['accessTokenDuration']
+        >('authentication.accessTokenDuration'),
       ),
-    };
+      sameSite: 'lax',
+    });
   }
 
-  @UseGuards(JwtAuthenticationGuard)
+  @UseGuards(RequiresAccessToken)
   @Get('status')
   getStatus() {
     return undefined;
