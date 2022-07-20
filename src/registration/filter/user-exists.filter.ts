@@ -1,7 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { MongoServerError } from 'mongodb';
-import { HttpStatus } from '@nestjs/common';
 
 /**
  * This filter is meant to catch MongoServerError.

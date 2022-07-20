@@ -1,21 +1,23 @@
+import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from '../user/user.schema';
+import { argon2id, hash } from 'argon2';
+
+import { User } from '../user/schema/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthenticationService } from './authentication.service';
-import * as argon2 from 'argon2';
-import { JwtModule } from '@nestjs/jwt';
 
 describe('AuthenticationService', () => {
   let authenticationService: AuthenticationService;
   let userService: UserService;
-  let user: User;
+  let user: Pick<User, 'username' | 'password'>;
 
   const plainPassword = 'This!$my_p@ssw0rD';
 
   beforeAll(async () => {
     user = {
       username: 'OneTwo',
-      password: await argon2.hash(plainPassword, { type: argon2.argon2id }),
+      password: await hash(plainPassword, { type: argon2id }),
     };
 
     userService = {
@@ -25,7 +27,7 @@ describe('AuthenticationService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [JwtModule],
+      imports: [JwtModule, ConfigModule],
       providers: [
         {
           provide: UserService,

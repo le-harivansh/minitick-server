@@ -1,11 +1,15 @@
-import { Test } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { ApplicationModule } from '../src/application.module';
-import { Connection } from 'mongoose';
 import { getConnectionToken } from '@nestjs/mongoose';
-import { User } from '../src/user/user.schema';
-import { ACCESS_TOKEN_KEY } from '../src/authentication/constants';
+import { Test } from '@nestjs/testing';
+import { Connection } from 'mongoose';
+import request from 'supertest';
+
+import { ApplicationModule } from '../src/application.module';
+import {
+  ACCESS_TOKEN_KEY,
+  REFRESH_TOKEN_KEY,
+} from '../src/authentication/constants';
+import { User } from '../src/user/schema/user.schema';
 
 describe('Authentication Controller (e2e)', () => {
   let application: INestApplication;
@@ -27,7 +31,7 @@ describe('Authentication Controller (e2e)', () => {
     await application.close();
   });
 
-  describe('/authentication/login (POST)', () => {
+  describe('Authentication', () => {
     const userData: User = {
       username: 'auth_test_user',
       password: 'auth_test_passsword',
@@ -41,18 +45,23 @@ describe('Authentication Controller (e2e)', () => {
     });
 
     // Password Authentication
-    describe('Password Authentication', () => {
+    describe('/authentication/login (POST)', () => {
       it('returns a cookie with the access token when the correct login credentials for an existing user are provided', async () => {
-        const response = await request(application.getHttpServer())
+        const loginResponse = await request(application.getHttpServer())
           .post('/authentication/login')
           .send(userData);
 
-        expect(response.statusCode).toBe(HttpStatus.OK);
+        expect(loginResponse.statusCode).toBe(HttpStatus.OK);
         expect(
-          response
+          loginResponse
             .get('Set-Cookie')
             .filter((cookie: string) => cookie.startsWith(ACCESS_TOKEN_KEY)),
-        ).not.toHaveLength(0);
+        ).toHaveLength(1);
+        expect(
+          loginResponse
+            .get('Set-Cookie')
+            .filter((cookie: string) => cookie.startsWith(REFRESH_TOKEN_KEY)),
+        ).toHaveLength(1);
       });
 
       it.each([
@@ -75,33 +84,46 @@ describe('Authentication Controller (e2e)', () => {
       );
     });
 
-    // JWT Authentication
-    describe('JWT Authentication', () => {
-      it('returns success status-code when a cookie with the correct access-token is provided', async () => {
+    // Refresh-Token Authentication
+    describe('/authentication/refresh (GET)', () => {
+      it('returns new token-pair when visiting the route with a valid refresh-token', async () => {
         const localAuthenticationResponse = await request(
           application.getHttpServer(),
         )
           .post('/authentication/login')
           .send(userData);
 
-        const JwtAuthenticationResponse = await request(
-          application.getHttpServer(),
-        )
-          .get('/authentication/status')
+        const refreshTokensResponse = await request(application.getHttpServer())
+          .get('/authentication/refresh')
           .set('Cookie', [...localAuthenticationResponse.get('Set-Cookie')]);
 
-        expect(JwtAuthenticationResponse.statusCode).toBe(HttpStatus.OK);
-      });
+        expect(localAuthenticationResponse.statusCode).toBe(HttpStatus.OK);
 
-      it('returns error status-code when an incorrect Bearer token is provided', async () => {
-        const JwtAuthenticationResponse = await request(
-          application.getHttpServer(),
-        ).get('/authentication/status');
+        expect(
+          refreshTokensResponse
+            .get('Set-Cookie')
+            .filter((cookie: string) => cookie.startsWith(ACCESS_TOKEN_KEY)),
+        ).toHaveLength(1);
+        expect(
+          refreshTokensResponse
+            .get('Set-Cookie')
+            .filter((cookie: string) => cookie.startsWith(REFRESH_TOKEN_KEY)),
+        ).toHaveLength(1);
 
-        expect(JwtAuthenticationResponse.statusCode).toBe(
-          HttpStatus.UNAUTHORIZED,
+        expect(refreshTokensResponse).not.toContain(
+          localAuthenticationResponse
+            .get('Set-Cookie')
+            .filter((cookie: string) => cookie.startsWith(ACCESS_TOKEN_KEY)),
+        );
+        expect(refreshTokensResponse).not.toContain(
+          localAuthenticationResponse
+            .get('Set-Cookie')
+            .filter((cookie: string) => cookie.startsWith(REFRESH_TOKEN_KEY)),
         );
       });
+
+      // it('saves a hashed version of the refresh token whenever a new one is generated via /refresh')
+      // it('saves a hashed version of the refresh token whenever a new one is generated during authentication')
     });
   });
 });

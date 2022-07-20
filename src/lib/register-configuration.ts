@@ -1,5 +1,5 @@
-import * as Joi from 'joi';
 import { registerAs } from '@nestjs/config';
+import Joi from 'joi';
 
 /**
  * Similar to @nestjs/config::registerAs, but also validates the environment values.

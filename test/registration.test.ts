@@ -1,10 +1,11 @@
-import { Test } from '@nestjs/testing';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import { getConnectionToken } from '@nestjs/mongoose';
+import { Test } from '@nestjs/testing';
+import { Connection } from 'mongoose';
+import request from 'supertest';
+
 import { ApplicationModule } from '../src/application.module';
 import { RegistrationDto } from '../src/registration/dto/registration.dto';
-import { Connection } from 'mongoose';
-import { getConnectionToken } from '@nestjs/mongoose';
 
 describe('Registration Controller (e2e)', () => {
   let application: INestApplication;

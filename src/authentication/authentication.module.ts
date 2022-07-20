@@ -1,42 +1,29 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PassportModule } from '@nestjs/passport';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+
 import { UserModule } from '../user/user.module';
-import { AuthenticationService } from './authentication.service';
-import { LocalStrategy } from './strategies/local.strategy';
-import { JwtStrategy } from './strategies/jwt.strategy';
+import authenticationConfig from './authentication.config';
 import { AuthenticationController } from './authentication.controller';
-import authenticationConfig, {
-  AuthenticationConfig,
-} from './authentication.config';
+import { AuthenticationService } from './authentication.service';
+import { AccessTokenStrategy } from './strategy/access-token.strategy';
+import { LocalStrategy } from './strategy/local.strategy';
+import { RefreshTokenStrategy } from './strategy/refresh-token.strategy';
 
 @Module({
   imports: [
     UserModule,
     PassportModule,
     ConfigModule.forFeature(authenticationConfig),
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const authenticationConfig: AuthenticationConfig = {
-          jwtSecret: configService.getOrThrow('authentication.jwtSecret'),
-          accessTokenDuration: configService.getOrThrow(
-            'authentication.accessTokenDuration',
-          ),
-        };
-
-        return {
-          secret: authenticationConfig.jwtSecret,
-          signOptions: {
-            expiresIn: authenticationConfig.accessTokenDuration,
-          },
-        };
-      },
-    }),
+    JwtModule.register({}),
   ],
-  providers: [AuthenticationService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthenticationService,
+    LocalStrategy,
+    AccessTokenStrategy,
+    RefreshTokenStrategy,
+  ],
   controllers: [AuthenticationController],
 })
 export class AuthenticationModule {}

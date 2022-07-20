@@ -1,4 +1,5 @@
-import * as Joi from 'joi';
+import Joi from 'joi';
+
 import registerConfiguration from './lib/register-configuration';
 
 export interface ApplicationConfig {

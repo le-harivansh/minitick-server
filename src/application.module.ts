@@ -1,11 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import * as cookieParser from 'cookie-parser';
-import { DatabaseModule } from './database/database.module';
-import { AuthenticationModule } from './authentication/authentication.module';
-import { UserModule } from './user/user.module';
-import { RegistrationModule } from './registration/registration.module';
+import cookieParser from 'cookie-parser';
+
 import applicationConfig, { ApplicationConfig } from './application.config';
+import { AuthenticationModule } from './authentication/authentication.module';
+import { DatabaseModule } from './database/database.module';
+import { RegistrationModule } from './registration/registration.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [

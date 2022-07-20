@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { verify } from 'argon2';
+
+import { UserService } from '../user/user.service';
 import { RegistrationDto } from './dto/registration.dto';
 import { RegistrationService } from './registration.service';
-import { UserService } from '../user/user.service';
-import * as argon2 from 'argon2';
 
 describe('RegistrationService', () => {
   let registrationService: RegistrationService;
@@ -34,7 +35,7 @@ describe('RegistrationService', () => {
 
     expect(userService.create).toHaveBeenCalled();
     expect(
-      await argon2.verify(
+      await verify(
         userService.create.mock.calls[0][0].password,
         registrationDto.password,
       ),
