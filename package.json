@@ -16,18 +16,18 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "format": "prettier --ignore-path .gitignore --write .",
+    "format": "prettier --write .",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint --cache --ignore-path .gitignore --fix .",
+    "lint": "eslint --cache --fix .",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest.config.ts",
-    "prepare": "husky install"
+    "postinstall": "husky install"
   },
   "dependencies": {
     "@nestjs/common": "^9.0.4",
@@ -42,6 +42,7 @@
     "class-validator": "^0.13.2",
     "cookie-parser": "^1.4.6",
     "joi": "^17.6.0",
+    "mongodb": "4.7.0",
     "mongoose": "^6.4.5",
     "ms": "^2.1.3",
     "passport": "^0.6.0",
@@ -84,5 +85,6 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.0.0",
     "typescript": "^4.7.4"
-  }
+  },
+  "packageManager": "yarn@3.2.2"
 }
