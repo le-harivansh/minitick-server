@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { verify } from 'argon2';
@@ -11,13 +7,13 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { UserData } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
-import { AuthenticationConfig } from '../authentication.config';
-import { REFRESH_TOKEN_KEY } from '../constants';
+import { AuthenticationConfiguration } from '../authentication.config';
+import { REFRESH_TOKEN, REFRESH_TOKEN_GUARD } from '../constants';
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,
-  'refresh-token',
+  REFRESH_TOKEN_GUARD,
 ) {
   constructor(
     readonly configService: ConfigService,
@@ -26,11 +22,11 @@ export class RefreshTokenStrategy extends PassportStrategy(
     super({
       passReqToCallback: true,
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: ExpressRequest) => request.signedCookies[REFRESH_TOKEN_KEY],
+        (request: ExpressRequest) => request.signedCookies[REFRESH_TOKEN],
       ]),
       secretOrKey: configService.getOrThrow<
-        AuthenticationConfig['refreshTokenSecret']
-      >('authentication.refreshTokenSecret'),
+        AuthenticationConfiguration['jwt']['refreshToken']['secret']
+      >('authentication.jwt.refreshToken.secret'),
     });
   }
 
@@ -39,7 +35,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
    *
    * @param request The current request.
    * @param payload Receives the payload of the JWT token which is set in AuthenticationService::generateRefreshToken.
-   * @returns A user object without the password field.
+   * @returns A user object without any 'private' fields (password, hashedRefreshTokens, etc...).
    */
   async validate(
     request: ExpressRequest,
@@ -47,26 +43,28 @@ export class RefreshTokenStrategy extends PassportStrategy(
   ): Promise<UserData> {
     const user = await this.userService.findByUsername(username);
 
-    const filteredRefreshTokens = (
-      await Promise.all(
-        user.refreshTokens.map(async (token) =>
-          (await verify(token.hash, request.signedCookies[REFRESH_TOKEN_KEY]))
-            ? token
-            : undefined,
-        ),
-      )
-    ).filter(Boolean);
+    const plainRefreshToken = request.signedCookies[REFRESH_TOKEN];
+    const hashedRefreshTokens = user.hashedRefreshTokens.map(
+      ({ hash }) => hash,
+    );
 
-    if (filteredRefreshTokens.length !== 1) {
-      throw new InternalServerErrorException();
-    }
-
-    if (filteredRefreshTokens[0].expiresOn < new Date()) {
+    if (
+      !(await RefreshTokenStrategy.tokenIsValid(
+        plainRefreshToken,
+        hashedRefreshTokens,
+      ))
+    ) {
       throw new UnauthorizedException();
     }
 
     return {
       username: user.username,
     };
+  }
+
+  private static async tokenIsValid(plain: string, hashes: string[]) {
+    return (
+      await Promise.all(hashes.map(async (hash) => await verify(hash, plain)))
+    ).some(Boolean);
   }
 }

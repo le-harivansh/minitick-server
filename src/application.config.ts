@@ -2,23 +2,22 @@ import Joi from 'joi';
 
 import registerConfiguration from './lib/register-configuration';
 
-export interface ApplicationConfig {
+export type ApplicationConfiguration = {
   port: number;
-  corsOrigin: string;
-  cookieSecret: string;
-}
+  cors: {
+    origin: string;
+  };
+};
 
-export default registerConfiguration<ApplicationConfig>('application', {
+export default registerConfiguration<ApplicationConfiguration>('application', {
   port: {
     env: 'APPLICATION_PORT',
     rules: Joi.number().port().default(80),
   },
-  corsOrigin: {
-    env: 'CORS_ORIGIN',
-    rules: Joi.string().uri().required(),
-  },
-  cookieSecret: {
-    env: 'COOKIE_SECRET',
-    rules: Joi.string().min(32).required(),
+  cors: {
+    origin: {
+      env: 'CORS_ORIGIN',
+      rules: Joi.string().uri().required(),
+    },
   },
 });

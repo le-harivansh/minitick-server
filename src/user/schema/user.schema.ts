@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-import { RefreshToken, RefreshTokenSchema } from './refresh-token.schema';
+import {
+  HashedRefreshToken,
+  HashedRefreshTokenSchema,
+} from './hashed-refresh-token.schema';
 
 @Schema()
 export class User {
@@ -12,9 +15,9 @@ export class User {
   password: string;
 
   @Prop({
-    type: [RefreshTokenSchema],
+    type: [HashedRefreshTokenSchema],
   })
-  refreshTokens?: RefreshToken[];
+  hashedRefreshTokens?: HashedRefreshToken[];
 }
 
 export type UserDocument = User & Document;

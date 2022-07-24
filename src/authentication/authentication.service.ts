@@ -5,7 +5,7 @@ import { verify } from 'argon2';
 
 import { User, UserData } from '../user/schema/user.schema';
 import { UserService } from '../user/user.service';
-import { AuthenticationConfig } from './authentication.config';
+import { AuthenticationConfiguration } from './authentication.config';
 
 @Injectable()
 export class AuthenticationService {
@@ -34,12 +34,12 @@ export class AuthenticationService {
     return this.jwtService.sign(
       { sub: username },
       {
-        secret: this.configService.get<
-          AuthenticationConfig['accessTokenSecret']
-        >('authentication.accessTokenSecret'),
-        expiresIn: this.configService.get<
-          AuthenticationConfig['accessTokenDuration']
-        >('authentication.accessTokenDuration'),
+        secret: this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['accessToken']['secret']
+        >('authentication.jwt.accessToken.secret'),
+        expiresIn: this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['accessToken']['duration']
+        >('authentication.jwt.accessToken.duration'),
       },
     );
   }
@@ -48,12 +48,12 @@ export class AuthenticationService {
     return this.jwtService.sign(
       { sub: username },
       {
-        secret: this.configService.get<
-          AuthenticationConfig['refreshTokenSecret']
-        >('authentication.refreshTokenSecret'),
-        expiresIn: this.configService.get<
-          AuthenticationConfig['refreshTokenDuration']
-        >('authentication.refreshTokenDuration'),
+        secret: this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['refreshToken']['secret']
+        >('authentication.jwt.refreshToken.secret'),
+        expiresIn: this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['refreshToken']['duration']
+        >('authentication.jwt.refreshToken.duration'),
       },
     );
   }

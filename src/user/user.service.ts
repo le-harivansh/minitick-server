@@ -5,7 +5,8 @@ import { argon2id, hash } from 'argon2';
 import { Model } from 'mongoose';
 import ms from 'ms';
 
-import { AuthenticationConfig } from '../authentication/authentication.config';
+import { AuthenticationConfiguration } from '../authentication/authentication.config';
+import { HashedRefreshToken } from './schema/hashed-refresh-token.schema';
 import { User, UserDocument } from './schema/user.schema';
 
 @Injectable()
@@ -24,22 +25,32 @@ export class UserService {
   }
 
   async saveRefreshToken(username: string, token: string) {
-    const user = await this.findByUsername(username);
+    const nonExpiredHashedRefreshTokens = (
+      await this.findByUsername(username)
+    ).hashedRefreshTokens.filter(({ expiresOn }) => expiresOn >= new Date());
 
-    // @todo: prune stale tokens
-
-    user.refreshTokens.push({
+    const newHashedRefreshToken: HashedRefreshToken = {
       hash: await hash(token, { type: argon2id }),
       expiresOn: new Date(
         Date.now() +
           ms(
             this.configService.getOrThrow<
-              AuthenticationConfig['refreshTokenDuration']
-            >('authentication.refreshTokenDuration'),
+              AuthenticationConfiguration['jwt']['refreshToken']['duration']
+            >('authentication.jwt.refreshToken.duration'),
           ),
       ),
-    });
+    };
 
-    await user.save();
+    await this.userModel.updateOne(
+      { username },
+      {
+        $set: {
+          hashedRefreshTokens: [
+            ...nonExpiredHashedRefreshTokens,
+            newHashedRefreshToken,
+          ],
+        },
+      },
+    );
   }
 }

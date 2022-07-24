@@ -6,13 +6,13 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 import { UserData } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
-import { AuthenticationConfig } from '../authentication.config';
-import { ACCESS_TOKEN_KEY } from '../constants';
+import { AuthenticationConfiguration } from '../authentication.config';
+import { ACCESS_TOKEN, ACCESS_TOKEN_GUARD } from '../constants';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(
   Strategy,
-  'access-token',
+  ACCESS_TOKEN_GUARD,
 ) {
   constructor(
     readonly configService: ConfigService,
@@ -20,11 +20,11 @@ export class AccessTokenStrategy extends PassportStrategy(
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: ExpressRequest) => request.signedCookies[ACCESS_TOKEN_KEY],
+        (request: ExpressRequest) => request.signedCookies[ACCESS_TOKEN],
       ]),
       secretOrKey: configService.getOrThrow<
-        AuthenticationConfig['accessTokenSecret']
-      >('authentication.accessTokenSecret'),
+        AuthenticationConfiguration['jwt']['accessToken']['secret']
+      >('authentication.jwt.accessToken.secret'),
     });
   }
 

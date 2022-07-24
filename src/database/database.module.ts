@@ -2,19 +2,27 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 
-import databaseConfig, { DatabaseConfig } from './database.config';
+import databaseConfiguration, {
+  DatabaseConfiguration,
+} from './database.config';
 
 @Module({
   imports: [
-    ConfigModule.forFeature(databaseConfig),
+    ConfigModule.forFeature(databaseConfiguration),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const { host, port, name }: DatabaseConfig = {
-          host: configService.getOrThrow('database.host'),
-          port: configService.getOrThrow('database.port'),
-          name: configService.getOrThrow('database.name'),
+        const { host, port, name }: DatabaseConfiguration = {
+          host: configService.getOrThrow<DatabaseConfiguration['host']>(
+            'database.host',
+          ),
+          port: configService.getOrThrow<DatabaseConfiguration['port']>(
+            'database.port',
+          ),
+          name: configService.getOrThrow<DatabaseConfiguration['name']>(
+            'database.name',
+          ),
         };
 
         return {

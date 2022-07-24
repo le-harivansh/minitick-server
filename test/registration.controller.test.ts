@@ -1,29 +1,50 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { getConnectionToken } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
-import { Connection } from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { Model } from 'mongoose';
 import request from 'supertest';
 
-import { ApplicationModule } from '../src/application.module';
 import { RegistrationDto } from '../src/registration/dto/registration.dto';
+import { RegistrationModule } from '../src/registration/registration.module';
+import { User, UserDocument } from '../src/user/schema/user.schema';
+import { UserModule } from '../src/user/user.module';
 
-describe('Registration Controller (e2e)', () => {
+describe('RegistrationController (e2e)', () => {
   let application: INestApplication;
-  let mongooseConnection: Connection;
+  let mongoMemoryServer: MongoMemoryServer;
+
+  let userModel: Model<UserDocument>;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
-      imports: [ApplicationModule],
+      imports: [
+        ConfigModule.forRoot(),
+        MongooseModule.forRootAsync({
+          async useFactory() {
+            mongoMemoryServer = await MongoMemoryServer.create();
+
+            return { uri: mongoMemoryServer.getUri() };
+          },
+        }),
+        UserModule,
+        RegistrationModule,
+      ],
     }).compile();
 
     application = moduleFixture.createNestApplication();
-    mongooseConnection = application.get<Connection>(getConnectionToken());
+    userModel = application.get<Model<UserDocument>>(getModelToken(User.name));
 
     await application.init();
   });
 
+  afterEach(async () => {
+    await userModel.deleteMany();
+  });
+
   afterAll(async () => {
-    await mongooseConnection.dropDatabase();
+    await mongoMemoryServer.stop();
     await application.close();
   });
 
@@ -67,6 +88,23 @@ describe('Registration Controller (e2e)', () => {
         expect(response.statusCode).toBe(HttpStatus.BAD_REQUEST);
       },
     );
+
+    it('saves a new user to the database if the registration is successful', async () => {
+      const registrationDto: RegistrationDto = {
+        username: 'user-0001',
+        password: 'pass-word',
+      };
+
+      await request(application.getHttpServer())
+        .post('/register')
+        .send(registrationDto);
+
+      expect(
+        userModel.findOne({ username: registrationDto.username }).exec(),
+      ).resolves.toMatchObject({
+        username: registrationDto.username,
+      });
+    });
 
     it('returns an error message if a user already exists in the database', async () => {
       const userData: RegistrationDto = {

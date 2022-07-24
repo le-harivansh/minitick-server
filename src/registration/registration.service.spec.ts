@@ -5,7 +5,7 @@ import { UserService } from '../user/user.service';
 import { RegistrationDto } from './dto/registration.dto';
 import { RegistrationService } from './registration.service';
 
-describe('RegistrationService', () => {
+describe('RegistrationService (unit)', () => {
   let registrationService: RegistrationService;
   const userService = {
     create: jest.fn(),
@@ -22,10 +22,10 @@ describe('RegistrationService', () => {
       ],
     }).compile();
 
-    registrationService = module.get<RegistrationService>(RegistrationService);
+    registrationService = module.get(RegistrationService);
   });
 
-  it('hashes the password when registering a user', async () => {
+  it("hashes the password before passing the user's data to the UserService", async () => {
     const registrationDto: RegistrationDto = {
       username: 'Hello-World',
       password: 'le_p@Ssw0rd',
@@ -33,7 +33,7 @@ describe('RegistrationService', () => {
 
     await registrationService.registerUser(registrationDto);
 
-    expect(userService.create).toHaveBeenCalled();
+    expect(userService.create).toHaveBeenCalledTimes(1);
     expect(
       await verify(
         userService.create.mock.calls[0][0].password,

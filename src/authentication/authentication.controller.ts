@@ -17,9 +17,9 @@ import ms from 'ms';
 import { UserData } from 'src/user/schema/user.schema';
 
 import { UserService } from '../user/user.service';
-import { AuthenticationConfig } from './authentication.config';
+import { AuthenticationConfiguration } from './authentication.config';
 import { AuthenticationService } from './authentication.service';
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from './constants';
+import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 import { RequiresAccessToken } from './guard/access-token.guard';
 import { RequiresCredentials } from './guard/local.guard';
 import { RequiresRefreshToken } from './guard/refresh-token.guard';
@@ -45,8 +45,9 @@ export class AuthenticationController {
   /**
    * @Deprecated
    *
-   * @todo: Remove when no longer needed.
+   * This path is only here to showcase the use of the access-token guard.
    */
+  // @todo: Remove when no longer needed.
   @UseGuards(RequiresAccessToken)
   @Get('status')
   getStatus() {
@@ -69,31 +70,30 @@ export class AuthenticationController {
     const user = request.user as UserData;
 
     const accessToken = this.authenticationService.generateAccessToken(user);
-
     const refreshToken = this.authenticationService.generateRefreshToken(user);
 
     await this.userService.saveRefreshToken(user.username, refreshToken);
 
-    response.cookie(ACCESS_TOKEN_KEY, accessToken, {
+    response.cookie(ACCESS_TOKEN, accessToken, {
       secure: true,
       httpOnly: true,
       signed: true,
       maxAge: ms(
         this.configService.getOrThrow<
-          AuthenticationConfig['accessTokenDuration']
-        >('authentication.accessTokenDuration'),
+          AuthenticationConfiguration['jwt']['accessToken']['duration']
+        >('authentication.jwt.accessToken.duration'),
       ),
       sameSite: 'lax',
     });
 
-    response.cookie(REFRESH_TOKEN_KEY, refreshToken, {
+    response.cookie(REFRESH_TOKEN, refreshToken, {
       secure: true,
       httpOnly: true,
       signed: true,
       maxAge: ms(
         this.configService.getOrThrow<
-          AuthenticationConfig['refreshTokenDuration']
-        >('authentication.refreshTokenDuration'),
+          AuthenticationConfiguration['jwt']['refreshToken']['duration']
+        >('authentication.jwt.refreshToken.duration'),
       ),
       sameSite: 'lax',
     });
