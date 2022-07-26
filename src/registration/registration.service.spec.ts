@@ -2,16 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { verify } from 'argon2';
 
 import { UserService } from '../user/user.service';
-import { RegistrationDto } from './dto/registration.dto';
+import { RegisterUserDto } from './dto/registration.dto';
 import { RegistrationService } from './registration.service';
 
-describe('RegistrationService (unit)', () => {
+describe(RegistrationService.name, () => {
   let registrationService: RegistrationService;
-  const userService = {
-    create: jest.fn(),
-  };
+  const userService = { createUser: jest.fn() };
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -25,20 +23,29 @@ describe('RegistrationService (unit)', () => {
     registrationService = module.get(RegistrationService);
   });
 
-  it("hashes the password before passing the user's data to the UserService", async () => {
-    const registrationDto: RegistrationDto = {
-      username: 'Hello-World',
-      password: 'le_p@Ssw0rd',
-    };
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
 
-    await registrationService.registerUser(registrationDto);
+  describe('registerUser', () => {
+    describe('when called', () => {
+      test("it hashes the password before passing the user's data to the resolved `UserService`", async () => {
+        const registrationDto: RegisterUserDto = {
+          username: 'Hello-World',
+          password: 'le_p@Ssw0rd',
+        };
 
-    expect(userService.create).toHaveBeenCalledTimes(1);
-    expect(
-      await verify(
-        userService.create.mock.calls[0][0].password,
-        registrationDto.password,
-      ),
-    ).toBeTruthy();
+        await registrationService.registerUser(registrationDto);
+
+        expect(userService.createUser).toHaveBeenCalledTimes(1);
+
+        expect(
+          verify(
+            userService.createUser.mock.calls[0][0].password,
+            registrationDto.password,
+          ),
+        ).resolves.toBeTruthy();
+      });
+    });
   });
 });

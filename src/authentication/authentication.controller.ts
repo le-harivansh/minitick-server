@@ -20,7 +20,6 @@ import { UserService } from '../user/user.service';
 import { AuthenticationConfiguration } from './authentication.config';
 import { AuthenticationService } from './authentication.service';
 import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
-import { RequiresAccessToken } from './guard/access-token.guard';
 import { RequiresCredentials } from './guard/local.guard';
 import { RequiresRefreshToken } from './guard/refresh-token.guard';
 
@@ -32,8 +31,8 @@ export class AuthenticationController {
     private readonly configService: ConfigService,
   ) {}
 
-  @UseGuards(RequiresCredentials)
   @Post('login')
+  @UseGuards(RequiresCredentials)
   @HttpCode(HttpStatus.OK)
   async login(
     @Request() request: ExpressRequest,
@@ -42,20 +41,8 @@ export class AuthenticationController {
     await this.regenerateTokens(request, response);
   }
 
-  /**
-   * @Deprecated
-   *
-   * This path is only here to showcase the use of the access-token guard.
-   */
-  // @todo: Remove when no longer needed.
-  @UseGuards(RequiresAccessToken)
-  @Get('status')
-  getStatus() {
-    return undefined;
-  }
-
+  @Get('refresh-tokens')
   @UseGuards(RequiresRefreshToken)
-  @Get('refresh')
   async refresh(
     @Request() request: ExpressRequest,
     @Response({ passthrough: true }) response: ExpressResponse,
@@ -69,8 +56,12 @@ export class AuthenticationController {
   ) {
     const user = request.user as UserData;
 
-    const accessToken = this.authenticationService.generateAccessToken(user);
-    const refreshToken = this.authenticationService.generateRefreshToken(user);
+    const accessToken = await this.authenticationService.generateAccessToken(
+      user,
+    );
+    const refreshToken = await this.authenticationService.generateRefreshToken(
+      user,
+    );
 
     await this.userService.saveRefreshToken(user.username, refreshToken);
 

@@ -10,7 +10,9 @@ import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      envFilePath: process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
+    }),
     ConfigModule.forFeature(applicationConfiguration),
     CookieModule,
     DatabaseModule,

@@ -10,7 +10,7 @@ export class HashedRefreshToken {
    * pruned from the database.
    *
    * DO NOT check the validity of the token using this field, since expiry date
-   * checks are automatically done by passport-jwt using data in the JWT token.
+   * checks are automatically done by passport-jwt.
    */
   @Prop({ type: Date, required: true })
   expiresOn: Date;

@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { useContainer } from 'class-validator';
 
 import { ApplicationConfiguration } from './application.config';
 import { ApplicationModule } from './application.module';
@@ -13,6 +14,10 @@ async function bootstrap() {
     origin: configService.getOrThrow<
       ApplicationConfiguration['cors']['origin']
     >('application.cors.origin'),
+  });
+
+  useContainer(application.select(ApplicationModule), {
+    fallbackOnErrors: true,
   });
 
   const port =

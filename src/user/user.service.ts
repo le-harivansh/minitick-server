@@ -16,7 +16,7 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(userData: User) {
+  async createUser(userData: User) {
     return this.userModel.create(userData);
   }
 

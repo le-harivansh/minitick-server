@@ -2,13 +2,11 @@ import {
   Body,
   Controller,
   Post,
-  UseFilters,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 
-import { RegistrationDto } from './dto/registration.dto';
-import { UserExistsFilter } from './filter/user-exists.filter';
+import { RegisterUserDto } from './dto/registration.dto';
 import { RegistrationService } from './registration.service';
 
 @Controller('register')
@@ -17,8 +15,7 @@ export class RegistrationController {
 
   @Post()
   @UsePipes(ValidationPipe)
-  @UseFilters(UserExistsFilter)
-  async register(@Body() registrationDto: RegistrationDto) {
-    await this.registrationService.registerUser(registrationDto);
+  async register(@Body() registerUserDto: RegisterUserDto) {
+    await this.registrationService.registerUser(registerUserDto);
   }
 }

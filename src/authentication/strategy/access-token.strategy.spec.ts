@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../../user/user.service';
 import { AccessTokenStrategy } from './access-token.strategy';
 
-describe('AccessTokenStrategy (unit)', () => {
+describe(AccessTokenStrategy.name, () => {
   let accessTokenStrategy: AccessTokenStrategy;
 
   beforeEach(async () => {
@@ -29,11 +29,15 @@ describe('AccessTokenStrategy (unit)', () => {
     accessTokenStrategy = module.get(AccessTokenStrategy);
   });
 
-  it('returns valid user data', async () => {
-    expect(
-      await accessTokenStrategy.validate({ sub: 'username' }),
-    ).toMatchObject({
-      username: 'username',
+  describe('validate', () => {
+    describe('when called', () => {
+      test('it returns valid user data', async () => {
+        const username = 'le-username';
+
+        expect(
+          accessTokenStrategy.validate({ sub: username }),
+        ).resolves.toMatchObject({ username });
+      });
     });
   });
 });

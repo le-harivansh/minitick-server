@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { verify } from 'argon2';
 
-import { User, UserData } from '../user/schema/user.schema';
+import { UserData } from '../user/schema/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthenticationConfiguration } from './authentication.config';
 
@@ -30,8 +30,8 @@ export class AuthenticationService {
     }
   }
 
-  generateAccessToken({ username }: Pick<User, 'username'>) {
-    return this.jwtService.sign(
+  async generateAccessToken({ username }: Pick<UserData, 'username'>) {
+    return this.jwtService.signAsync(
       { sub: username },
       {
         secret: this.configService.getOrThrow<
@@ -44,8 +44,8 @@ export class AuthenticationService {
     );
   }
 
-  generateRefreshToken({ username }: Pick<User, 'username'>) {
-    return this.jwtService.sign(
+  async generateRefreshToken({ username }: Pick<UserData, 'username'>) {
+    return this.jwtService.signAsync(
       { sub: username },
       {
         secret: this.configService.getOrThrow<
