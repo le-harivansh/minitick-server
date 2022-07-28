@@ -24,6 +24,22 @@ export class UserService {
     return this.userModel.findOne({ username }).exec();
   }
 
+  async updateUser(
+    username: string,
+    payload: Partial<Omit<User, 'hashedRefreshTokens'>>,
+  ) {
+    if (Object.hasOwn(payload, 'password')) {
+      payload = {
+        ...payload,
+        password: await hash(payload.password, { type: argon2id }),
+      };
+    }
+
+    return this.userModel
+      .findOneAndUpdate({ username }, payload, { new: true })
+      .exec();
+  }
+
   async saveRefreshToken(username: string, token: string) {
     const nonExpiredHashedRefreshTokens = (
       await this.findByUsername(username)
@@ -41,16 +57,18 @@ export class UserService {
       ),
     };
 
-    await this.userModel.updateOne(
-      { username },
-      {
-        $set: {
-          hashedRefreshTokens: [
-            ...nonExpiredHashedRefreshTokens,
-            newHashedRefreshToken,
-          ],
+    await this.userModel
+      .updateOne(
+        { username },
+        {
+          $set: {
+            hashedRefreshTokens: [
+              ...nonExpiredHashedRefreshTokens,
+              newHashedRefreshToken,
+            ],
+          },
         },
-      },
-    );
+      )
+      .exec();
   }
 }

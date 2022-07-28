@@ -39,30 +39,27 @@ export class RefreshTokenStrategy extends PassportStrategy(
    */
   async validate(
     request: ExpressRequest,
-    { sub: username }: { sub: string },
+    { sub: authenticatedUserUsername }: { sub: string },
   ): Promise<UserData> {
-    const user = await this.userService.findByUsername(username);
-
-    const plainRefreshToken = request.signedCookies[REFRESH_TOKEN];
-    const hashedRefreshTokens = user.hashedRefreshTokens.map(
-      ({ hash }) => hash,
-    );
+    const { username, hashedRefreshTokens } =
+      await this.userService.findByUsername(authenticatedUserUsername);
 
     if (
       !(await RefreshTokenStrategy.tokenIsValid(
-        plainRefreshToken,
-        hashedRefreshTokens,
+        request.signedCookies[REFRESH_TOKEN],
+        hashedRefreshTokens.map(({ hash }) => hash),
       ))
     ) {
       throw new UnauthorizedException();
     }
 
-    return {
-      username: user.username,
-    };
+    return { username };
   }
 
-  private static async tokenIsValid(plain: string, hashes: string[]) {
+  private static async tokenIsValid(
+    plain: string,
+    hashes: string[],
+  ): Promise<boolean> {
     return (
       await Promise.all(hashes.map(async (hash) => await verify(hash, plain)))
     ).some(Boolean);

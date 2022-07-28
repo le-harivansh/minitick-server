@@ -104,6 +104,51 @@ describe(UserService.name, () => {
     });
   });
 
+  describe('updateUser', () => {
+    const userData = {
+      username: 'username-1000',
+      password: 'password-1000',
+    };
+
+    let userId: string;
+
+    beforeEach(async () => {
+      userId = (await userModel.create(userData))._id;
+    });
+
+    describe('when called', () => {
+      test("it updates the specified user's data using the provided payload", async () => {
+        const newUsername = 'username-1111';
+
+        expect(
+          userModel.findOne({ username: newUsername }).exec(),
+        ).resolves.toBeNull();
+
+        await userService.updateUser(userData.username, {
+          username: newUsername,
+        });
+
+        expect(
+          userModel.findOne({ username: newUsername }).exec(),
+        ).resolves.toMatchObject({
+          _id: userId,
+          username: newUsername,
+        });
+      });
+
+      test('it hashes any provided password before updating it', async () => {
+        const newPassword = 'password-1111';
+
+        const { password: savedHashedPassword } = await userService.updateUser(
+          userData.username,
+          { password: newPassword },
+        );
+
+        expect(verify(savedHashedPassword, newPassword)).resolves.toBeTruthy();
+      });
+    });
+  });
+
   describe('saveRefreshToken', () => {
     describe('when called', () => {
       test("it saves a hash of the refresh token to the user's refresh-token array", async () => {

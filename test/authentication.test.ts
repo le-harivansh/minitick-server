@@ -47,7 +47,7 @@ describe('User Authentication', () => {
 
   describe('/POST authentication/login', () => {
     describe('for a successful authentication attempt', () => {
-      const userData: Pick<User, 'username' | 'password'> = {
+      const userCredentials: Pick<User, 'username' | 'password'> = {
         username: 'authentication-username-001',
         password: 'authentication-password-001',
       };
@@ -64,20 +64,20 @@ describe('User Authentication', () => {
       beforeEach(async () => {
         await request(application.getHttpServer())
           .post('/register')
-          .send(userData)
+          .send(userCredentials)
           .expect(HttpStatus.CREATED);
       });
 
       afterEach(async () => {
         await userModel
-          .findOneAndDelete({ username: userData.username })
+          .findOneAndDelete({ username: userCredentials.username })
           .exec();
       });
 
       test("it returns the 'success' status code", () => {
         return request(application.getHttpServer())
           .post('/authentication/login')
-          .send(userData)
+          .send(userCredentials)
           .expect(HttpStatus.OK);
       });
 
@@ -85,7 +85,7 @@ describe('User Authentication', () => {
         test('an access-token is returned in a cookie', async () => {
           const loginResponse = await request(application.getHttpServer())
             .post('/authentication/login')
-            .send(userData);
+            .send(userCredentials);
 
           expect(
             loginResponse
@@ -99,7 +99,7 @@ describe('User Authentication', () => {
         test('the returned access-token contains appropriate data', async () => {
           const loginResponse = await request(application.getHttpServer())
             .post('/authentication/login')
-            .send(userData);
+            .send(userCredentials);
 
           const accessTokenCookieString = loginResponse
             .get('Set-Cookie')
@@ -118,7 +118,7 @@ describe('User Authentication', () => {
 
           expect(
             jwtService.verify(accessToken, { secret: accessTokenSecret }),
-          ).toMatchObject({ sub: userData.username });
+          ).toMatchObject({ sub: userCredentials.username });
         });
       });
 
@@ -126,7 +126,7 @@ describe('User Authentication', () => {
         test('a refresh-token is returned in a cookie', async () => {
           const loginResponse = await request(application.getHttpServer())
             .post('/authentication/login')
-            .send(userData);
+            .send(userCredentials);
 
           expect(
             loginResponse
@@ -140,7 +140,7 @@ describe('User Authentication', () => {
         test('the returned refresh-token contains appropriate data', async () => {
           const loginResponse = await request(application.getHttpServer())
             .post('/authentication/login')
-            .send(userData);
+            .send(userCredentials);
 
           const refreshTokenCookieString = loginResponse
             .get('Set-Cookie')
@@ -159,13 +159,13 @@ describe('User Authentication', () => {
 
           expect(
             jwtService.verify(refreshToken, { secret: refreshTokenSecret }),
-          ).toMatchObject({ sub: userData.username });
+          ).toMatchObject({ sub: userCredentials.username });
         });
 
         test('a hash of the returned refresh-token is saved in the database', async () => {
           const loginResponse = await request(application.getHttpServer())
             .post('/authentication/login')
-            .send(userData);
+            .send(userCredentials);
 
           const refreshTokenCookieString = loginResponse
             .get('Set-Cookie')
@@ -179,7 +179,9 @@ describe('User Authentication', () => {
           ) as string;
 
           const hashedRefreshTokens = (
-            await userModel.findOne({ username: userData.username }).exec()
+            await userModel
+              .findOne({ username: userCredentials.username })
+              .exec()
           ).hashedRefreshTokens;
 
           expect(
@@ -198,7 +200,7 @@ describe('User Authentication', () => {
 
   describe('/GET authentication/refresh-tokens', () => {
     describe('for a successful token-refresh attempt', () => {
-      const userData: Pick<User, 'username' | 'password'> = {
+      const userCredentials: Pick<User, 'username' | 'password'> = {
         username: 'authentication-username-002',
         password: 'authentication-password-002',
       };
@@ -216,12 +218,12 @@ describe('User Authentication', () => {
       beforeEach(async () => {
         await request(application.getHttpServer())
           .post('/register')
-          .send(userData)
+          .send(userCredentials)
           .expect(HttpStatus.CREATED);
 
         const loginResponse = await request(application.getHttpServer())
           .post('/authentication/login')
-          .send(userData)
+          .send(userCredentials)
           .expect(HttpStatus.OK);
 
         currentRefreshTokenCookieString = loginResponse
@@ -233,7 +235,7 @@ describe('User Authentication', () => {
 
       afterEach(async () => {
         await userModel
-          .findOneAndDelete({ username: userData.username })
+          .findOneAndDelete({ username: userCredentials.username })
           .exec();
 
         currentRefreshTokenCookieString = undefined;
@@ -287,7 +289,7 @@ describe('User Authentication', () => {
 
           expect(
             jwtService.verify(accessToken, { secret: accessTokenSecret }),
-          ).toMatchObject({ sub: userData.username });
+          ).toMatchObject({ sub: userCredentials.username });
         });
       });
 
@@ -332,7 +334,7 @@ describe('User Authentication', () => {
 
           expect(
             jwtService.verify(refreshToken, { secret: refreshTokenSecret }),
-          ).toMatchObject({ sub: userData.username });
+          ).toMatchObject({ sub: userCredentials.username });
         });
 
         test('a hash of the returned refresh-token is saved in the database', async () => {
@@ -354,7 +356,9 @@ describe('User Authentication', () => {
           ) as string;
 
           const hashedRefreshTokens = (
-            await userModel.findOne({ username: userData.username }).exec()
+            await userModel
+              .findOne({ username: userCredentials.username })
+              .exec()
           ).hashedRefreshTokens;
 
           expect(

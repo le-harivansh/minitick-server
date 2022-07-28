@@ -24,4 +24,4 @@ export type UserDocument = User & Document;
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-export type UserData = Pick<User, 'username'>;
+export type UserData = Omit<User, 'password' | 'hashedRefreshTokens'>;

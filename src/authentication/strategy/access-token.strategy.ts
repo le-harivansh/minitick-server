@@ -34,11 +34,15 @@ export class AccessTokenStrategy extends PassportStrategy(
    * @param Receives the payload of the JWT token which is set in AuthenticationService::generateAccessToken.
    * @returns A user object without the password field.
    */
-  async validate({ sub: username }: { sub: string }): Promise<UserData> {
-    const user = await this.userService.findByUsername(username);
+  async validate({
+    sub: authenticatedUserUsername,
+  }: {
+    sub: string;
+  }): Promise<UserData> {
+    const { username } = await this.userService.findByUsername(
+      authenticatedUserUsername,
+    );
 
-    return {
-      username: user.username,
-    };
+    return { username };
   }
 }

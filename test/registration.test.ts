@@ -34,38 +34,38 @@ describe('User Registration', () => {
 
   describe('/POST regiser', () => {
     describe('for a successful user registration', () => {
-      const registrationDto: RegisterUserDto = {
+      const registerUserDto: RegisterUserDto = {
         username: 'registration-username-001',
         password: 'registration-password-001',
       };
 
       afterEach(async () => {
         await userModel
-          .findOneAndDelete({ username: registrationDto.username })
+          .findOneAndDelete({ username: registerUserDto.username })
           .exec();
       });
 
       test("it returns the 'created' HTTP status-code", () => {
         return request(application.getHttpServer())
           .post('/register')
-          .send(registrationDto)
+          .send(registerUserDto)
           .expect(HttpStatus.CREATED);
       });
 
       test('it saves a new user to the database', async () => {
         await request(application.getHttpServer())
           .post('/register')
-          .send(registrationDto)
+          .send(registerUserDto)
           .expect(HttpStatus.CREATED);
 
         expect(
-          userModel.findOne({ username: registrationDto.username }).exec(),
-        ).resolves.toMatchObject({ username: registrationDto.username });
+          userModel.findOne({ username: registerUserDto.username }).exec(),
+        ).resolves.toMatchObject({ username: registerUserDto.username });
       });
     });
 
     describe('for an unsuccessful user registration', () => {
-      const userData: RegisterUserDto = {
+      const registerUserDto: RegisterUserDto = {
         username: 'registration-username-002',
         password: 'registration-password-002',
       };
@@ -73,13 +73,13 @@ describe('User Registration', () => {
       beforeAll(async () => {
         await request(application.getHttpServer())
           .post('/register')
-          .send(userData)
+          .send(registerUserDto)
           .expect(HttpStatus.CREATED);
       });
 
       afterAll(async () => {
         await userModel
-          .findOneAndDelete({ username: userData.username })
+          .findOneAndDelete({ username: registerUserDto.username })
           .exec();
       });
 
@@ -90,20 +90,18 @@ describe('User Registration', () => {
         { username: '', password: 'registration-password-003' },
 
         // IsString
-        { username: 44, password: 55 },
-        { username: 'registration-username-004', password: 55 },
-        { username: 44, password: 'registration-password-004' },
+        { username: 4444, password: 88888888 },
 
         // username: MinLength(4)
-        { username: 'ru5', password: 'registration-password-005' },
+        { username: 'ru5', password: 'registration-password-004' },
 
         // password: MinLength(8)
-        { username: 'registration-username-006', password: 'r-p-6' },
+        { username: 'registration-username-005', password: 'r-p-6' },
 
         // username: IsUnique
-        userData,
+        registerUserDto,
       ])(
-        'it returns an error message if the data provided is invalid',
+        'it returns an error message if the payload is invalid',
         ({ username, password }) => {
           return request(application.getHttpServer())
             .post('/register')

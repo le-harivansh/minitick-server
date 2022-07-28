@@ -7,10 +7,9 @@ export class RegisterUserDto {
   @IsString()
   @MinLength(4)
   @IsUnique()
-  username: string;
+  readonly username: string;
 
   @IsNotEmpty()
-  @IsString()
   @MinLength(8)
-  password: string;
+  readonly password: string;
 }
