@@ -49,6 +49,10 @@ export class UserService {
       .exec();
   }
 
+  async deleteUser(userId: string) {
+    return this.userModel.findByIdAndDelete(userId).exec();
+  }
+
   async saveHashedRefreshToken(userId: string, token: string) {
     const nonExpiredHashedRefreshTokens = (
       await this.findById(userId)

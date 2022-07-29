@@ -203,6 +203,27 @@ describe(UserService.name, () => {
     });
   });
 
+  describe('deleteUser', () => {
+    const userData: Pick<User, 'username' | 'password'> = {
+      username: 'hellooooo',
+      password: 'nope.jpeg',
+    };
+
+    let userId: string;
+
+    beforeEach(async () => {
+      userId = (await userModel.create(userData))._id;
+    });
+
+    describe('when called', () => {
+      test("it removes the specified user's data from the database", async () => {
+        await userService.deleteUser(userId);
+
+        expect(userModel.findById(userId).exec()).resolves.toBeNull();
+      });
+    });
+  });
+
   describe('saveHashedRefreshToken', () => {
     describe('when called', () => {
       test("it saves a hash of the refresh token to the user's refresh-token array", async () => {

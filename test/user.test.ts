@@ -1,18 +1,22 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
 import { verify } from 'argon2';
 import { useContainer } from 'class-validator';
+import { parse } from 'cookie';
 import { Model } from 'mongoose';
 import request from 'supertest';
 
 import { ApplicationModule } from '../src/application.module';
-import { ACCESS_TOKEN } from '../src/authentication/constants';
+import { ACCESS_TOKEN, REFRESH_TOKEN } from '../src/authentication/constants';
+import { CookieConfiguration } from '../src/cookie/cookie.config';
 import { UpdateUserDto } from '../src/user/dto/update-user.dto';
 import { User, UserDocument } from '../src/user/schema/user.schema';
 
 describe('User', () => {
   let application: INestApplication;
+  let configService: ConfigService;
 
   let userModel: Model<UserDocument>;
 
@@ -22,6 +26,7 @@ describe('User', () => {
     }).compile();
 
     application = moduleFixture.createNestApplication();
+    configService = application.get(ConfigService);
 
     userModel = application.get<Model<UserDocument>>(getModelToken(User.name));
 
@@ -178,6 +183,115 @@ describe('User', () => {
             .expect(HttpStatus.BAD_REQUEST);
         },
       );
+    });
+  });
+
+  describe('/DELETE user', () => {
+    const userCredentials: Pick<User, 'username' | 'password'> = {
+      username: 'delete-username-001',
+      password: 'delete-password-001',
+    };
+
+    let userId: string;
+    let authAccessTokenCookieString: string;
+
+    let cookieSecret: string;
+
+    beforeAll(() => {
+      cookieSecret =
+        configService.getOrThrow<CookieConfiguration['secret']>(
+          'cookie.secret',
+        );
+    });
+
+    beforeEach(async () => {
+      await request(application.getHttpServer())
+        .post('/register')
+        .send(userCredentials)
+        .expect(HttpStatus.CREATED);
+
+      userId = (
+        await userModel.findOne({ username: userCredentials.username }).exec()
+      )._id;
+
+      const loginResponse = await request(application.getHttpServer())
+        .post('/login')
+        .send(userCredentials)
+        .expect(HttpStatus.OK);
+
+      authAccessTokenCookieString = loginResponse
+        .get('Set-Cookie')
+        .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN))[0];
+    });
+
+    afterEach(async () => {
+      await userModel.findByIdAndDelete(userId).exec();
+    });
+
+    test('it cannot be accessed by unauthentiated users', () => {
+      return request(application.getHttpServer())
+        .delete('/user')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    describe('for a successful user-delete attempt', () => {
+      test('it returns HttpStatus OK', () => {
+        return request(application.getHttpServer())
+          .delete('/user')
+          .set('Cookie', authAccessTokenCookieString)
+          .expect(HttpStatus.OK);
+      });
+
+      test("it deletes the authenticated user's data from the database", async () => {
+        await request(application.getHttpServer())
+          .delete('/user')
+          .set('Cookie', authAccessTokenCookieString)
+          .expect(HttpStatus.OK);
+
+        expect(userModel.findById(userId).exec()).resolves.toBeNull();
+      });
+
+      test('clears the access-token cookie', async () => {
+        const userDeleteResponse = await request(application.getHttpServer())
+          .delete('/user')
+          .set('Cookie', authAccessTokenCookieString)
+          .expect(HttpStatus.OK);
+        const filteredAccessTokenCookies = userDeleteResponse
+          .get('Set-Cookie')
+          .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN));
+
+        expect(filteredAccessTokenCookies).toHaveLength(1);
+
+        /**
+         * testing that the `Expires` property of the returned access-token
+         * cookie is in the past - effectively clearing it from browsers.
+         */
+        expect(
+          new Date(parse(filteredAccessTokenCookies[0])['Expires']) <=
+            new Date(),
+        ).toBeTruthy();
+      });
+
+      test('clears the refresh-token cookie', async () => {
+        const userDeleteResponse = await request(application.getHttpServer())
+          .delete('/user')
+          .set('Cookie', authAccessTokenCookieString)
+          .expect(HttpStatus.OK);
+        const filteredRefreshTokenCookies = userDeleteResponse
+          .get('Set-Cookie')
+          .filter((cookieString) => cookieString.startsWith(REFRESH_TOKEN));
+
+        expect(filteredRefreshTokenCookies).toHaveLength(1);
+
+        /**
+         * testing that the `Expires` property of the returned access-token
+         * cookie is in the past - effectively clearing it from browsers.
+         */
+        expect(
+          new Date(parse(filteredRefreshTokenCookies[0])['Expires']) <=
+            new Date(),
+        ).toBeTruthy();
+      });
     });
   });
 });
