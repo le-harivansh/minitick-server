@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { verify } from 'argon2';
 
-import { UserData } from '../user/schema/user.schema';
+import { RequestUser } from '../user/schema/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthenticationConfiguration } from './authentication.config';
 
@@ -15,24 +15,15 @@ export class AuthenticationService {
     private readonly configService: ConfigService,
   ) {}
 
-  async validateCredentials(
-    username: string,
-    password: string,
-  ): Promise<UserData | undefined> {
+  async credentialsAreValid(username: string, password: string) {
     const retrievedUser = await this.userService.findByUsername(username);
 
-    if (retrievedUser && (await verify(retrievedUser.password, password))) {
-      const { username } = retrievedUser;
-
-      return {
-        username,
-      };
-    }
+    return retrievedUser && (await verify(retrievedUser.password, password));
   }
 
-  async generateAccessToken({ username }: Pick<UserData, 'username'>) {
+  async generateAccessToken({ id: userId }: RequestUser) {
     return this.jwtService.signAsync(
-      { sub: username },
+      { sub: userId },
       {
         secret: this.configService.getOrThrow<
           AuthenticationConfiguration['jwt']['accessToken']['secret']
@@ -44,9 +35,9 @@ export class AuthenticationService {
     );
   }
 
-  async generateRefreshToken({ username }: Pick<UserData, 'username'>) {
+  async generateRefreshToken({ id: userId }: RequestUser) {
     return this.jwtService.signAsync(
-      { sub: username },
+      { sub: userId },
       {
         secret: this.configService.getOrThrow<
           AuthenticationConfiguration['jwt']['refreshToken']['secret']

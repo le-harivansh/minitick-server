@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { verify } from 'argon2';
+import { ObjectId } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Model } from 'mongoose';
 
@@ -73,9 +74,21 @@ describe(UserService.name, () => {
       test("it saves the provided user's data to the database", async () => {
         await userService.createUser(userData);
 
-        expect(userModel.findOne(userData).exec()).resolves.toMatchObject(
-          userData,
-        );
+        expect(
+          userModel.findOne({ username: userData.username }).exec(),
+        ).resolves.toMatchObject({
+          username: userData.username,
+        });
+      });
+
+      test("it hashes the user's password before saving it", async () => {
+        await userService.createUser(userData);
+
+        const { password: hashedPassword } = await userModel
+          .findOne({ username: userData.username })
+          .exec();
+
+        expect(verify(hashedPassword, userData.password)).resolves.toBeTruthy();
       });
     });
   });
@@ -104,6 +117,31 @@ describe(UserService.name, () => {
     });
   });
 
+  describe('findById', () => {
+    const userData: User = {
+      username: 'threefour',
+      password: 'sureefoar',
+    };
+
+    let userId: string;
+
+    beforeAll(async () => {
+      userId = (await userModel.create(userData))._id;
+    });
+
+    describe('when called', () => {
+      test('it returns the corresponding user from the database', async () => {
+        expect(userService.findById(userId)).resolves.toMatchObject(userData);
+      });
+
+      test('it returns null if the user could not be found in the database', async () => {
+        expect(
+          userService.findById(new ObjectId().toString()),
+        ).resolves.toBeNull();
+      });
+    });
+  });
+
   describe('updateUser', () => {
     const userData = {
       username: 'username-1000',
@@ -117,39 +155,55 @@ describe(UserService.name, () => {
     });
 
     describe('when called', () => {
-      test("it updates the specified user's data using the provided payload", async () => {
+      test("it updates the specified user's (non-password) data using the provided payload", async () => {
         const newUsername = 'username-1111';
 
         expect(
           userModel.findOne({ username: newUsername }).exec(),
         ).resolves.toBeNull();
 
-        await userService.updateUser(userData.username, {
+        await userService.updateUser(userId, {
           username: newUsername,
         });
 
-        expect(
-          userModel.findOne({ username: newUsername }).exec(),
-        ).resolves.toMatchObject({
-          _id: userId,
+        expect(userModel.findById(userId).exec()).resolves.toMatchObject({
           username: newUsername,
         });
       });
 
-      test('it hashes any provided password before updating it', async () => {
+      test('it hashes any provided user-password before updating it', async () => {
         const newPassword = 'password-1111';
 
-        const { password: savedHashedPassword } = await userService.updateUser(
-          userData.username,
-          { password: newPassword },
-        );
+        await userService.updateUser(userId, { password: newPassword });
+
+        const savedHashedPassword = (await userModel.findById(userId).exec())
+          .password;
 
         expect(verify(savedHashedPassword, newPassword)).resolves.toBeTruthy();
+      });
+
+      test("it updates the specified user's (full) data using the provided payload", async () => {
+        const newUserData: Pick<User, 'username' | 'password'> = {
+          username: 'username-xxxx',
+          password: 'password-xxxx',
+        };
+
+        await userService.updateUser(userId, newUserData);
+
+        const updatedUser = await userModel.findById(userId).exec();
+
+        expect(
+          verify(updatedUser.password, newUserData.password),
+        ).resolves.toBeTruthy();
+
+        expect(userModel.findById(userId).exec()).resolves.toMatchObject({
+          username: newUserData.username,
+        });
       });
     });
   });
 
-  describe('saveRefreshToken', () => {
+  describe('saveHashedRefreshToken', () => {
     describe('when called', () => {
       test("it saves a hash of the refresh token to the user's refresh-token array", async () => {
         const userData: User = {
@@ -157,14 +211,11 @@ describe(UserService.name, () => {
           password: 'zero',
         };
 
-        await userModel.create(userData);
+        const userId = (await userModel.create(userData))._id;
 
         const plainRefreshToken = 'refresh-token';
 
-        await userService.saveRefreshToken(
-          userData.username,
-          plainRefreshToken,
-        );
+        await userService.saveHashedRefreshToken(userId, plainRefreshToken);
 
         const retrievedUser = await userModel.findOne(userData).exec();
         const { hash: hashedRefreshToken } =
@@ -201,11 +252,9 @@ describe(UserService.name, () => {
 
         const newTokenPlain = 'new-token';
 
-        await userService.saveRefreshToken(userData.username, newTokenPlain);
+        await userService.saveHashedRefreshToken(newUser._id, newTokenPlain);
 
-        const retrievedUser = await userModel
-          .findOne({ username: userData.username })
-          .exec();
+        const retrievedUser = await userModel.findById(newUser._id).exec();
 
         expect(retrievedUser.hashedRefreshTokens).toHaveLength(2); // prune 2 & add 1
 

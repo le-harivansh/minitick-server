@@ -6,16 +6,16 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 
+import { UserService } from '../user/user.service';
 import { RegisterUserDto } from './dto/registration.dto';
-import { RegistrationService } from './registration.service';
 
 @Controller('register')
 export class RegistrationController {
-  constructor(private readonly registrationService: RegistrationService) {}
+  constructor(private readonly userService: UserService) {}
 
   @Post()
   @UsePipes(ValidationPipe)
   async register(@Body() registerUserDto: RegisterUserDto) {
-    await this.registrationService.registerUser(registerUserDto);
+    await this.userService.createUser(registerUserDto);
   }
 }

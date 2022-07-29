@@ -2,12 +2,18 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { argon2id, hash } from 'argon2';
+import { ObjectId } from 'mongodb';
 
+import { RequestUser } from '../user/schema/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthenticationService } from './authentication.service';
 
 describe(AuthenticationService.name, () => {
-  const userData = { username: 'OneTwo', password: 'onetwo' };
+  const requestUser: RequestUser = {
+    id: new ObjectId().toString(),
+    username: 'OneTwo',
+  };
+  const userPassword = 'onetwo';
   const jwtService = { signAsync: jest.fn() };
   const configService = { getOrThrow: jest.fn() };
 
@@ -29,10 +35,10 @@ describe(AuthenticationService.name, () => {
           useValue: {
             async findByUsername(username: string) {
               switch (username) {
-                case userData.username:
+                case requestUser.username:
                   return {
-                    username: userData.username,
-                    password: await hash(userData.password, { type: argon2id }),
+                    username: requestUser.username,
+                    password: await hash(userPassword, { type: argon2id }),
                   };
 
                 default:
@@ -52,24 +58,24 @@ describe(AuthenticationService.name, () => {
     jest.clearAllMocks();
   });
 
-  describe('validateCredentials', () => {
+  describe('credentialsAreValid', () => {
     describe('when called', () => {
-      test('it returns a user if its credentials are passed', async () => {
+      test('it returns true if correct user-credentials are passed', async () => {
         expect(
-          authenticationService.validateCredentials(
-            userData.username,
-            userData.password,
+          authenticationService.credentialsAreValid(
+            requestUser.username,
+            userPassword,
           ),
-        ).resolves.toMatchObject({ username: userData.username });
+        ).resolves.toBe(true);
       });
 
-      test('it returns undefined if invalid user-credentials are passed', async () => {
+      test('it returns false if incorrect user-credentials are passed', async () => {
         expect(
-          authenticationService.validateCredentials(
-            userData.username,
+          authenticationService.credentialsAreValid(
+            requestUser.username,
             'wrong-password',
           ),
-        ).resolves.toBeUndefined();
+        ).resolves.toBe(false);
       });
     });
   });
@@ -77,14 +83,12 @@ describe(AuthenticationService.name, () => {
   describe('generateAccessToken', () => {
     describe('when called', () => {
       test('it calls the resolved `JwtService` with the correct arguments', async () => {
-        await authenticationService.generateAccessToken({
-          username: userData.username,
-        });
+        await authenticationService.generateAccessToken(requestUser);
 
         expect(jwtService.signAsync).toHaveBeenCalledTimes(1);
 
         expect(jwtService.signAsync.mock.calls[0][0]).toMatchObject({
-          sub: userData.username,
+          sub: requestUser.id,
         });
         expect(jwtService.signAsync.mock.calls[0][1]).toMatchObject({
           secret: undefined,
@@ -106,14 +110,12 @@ describe(AuthenticationService.name, () => {
   describe('generateRefreshToken', () => {
     describe('when called', () => {
       test('it calls the resolved `JwtService` with the correct arguments', async () => {
-        await authenticationService.generateRefreshToken({
-          username: userData.username,
-        });
+        await authenticationService.generateRefreshToken(requestUser);
 
         expect(jwtService.signAsync).toHaveBeenCalledTimes(1);
 
         expect(jwtService.signAsync.mock.calls[0][0]).toMatchObject({
-          sub: userData.username,
+          sub: requestUser.id,
         });
         expect(jwtService.signAsync.mock.calls[0][1]).toMatchObject({
           secret: undefined,

@@ -5,7 +5,7 @@ import { verify } from 'argon2';
 import { Request as ExpressRequest } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { UserData } from '../../user/schema/user.schema';
+import { RequestUser } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
 import { AuthenticationConfiguration } from '../authentication.config';
 import { REFRESH_TOKEN, REFRESH_TOKEN_GUARD } from '../constants';
@@ -31,18 +31,19 @@ export class RefreshTokenStrategy extends PassportStrategy(
   }
 
   /**
-   * @see: AuthenticationService::generateRefreshToken to see the data embedded in the refresh token.
+   * @see: AuthenticationService::generateRefreshToken to see the data embedded in the access token.
    *
    * @param request The current request.
-   * @param payload Receives the payload of the JWT token which is set in AuthenticationService::generateRefreshToken.
-   * @returns A user object without any 'private' fields (password, hashedRefreshTokens, etc...).
+   * @param Receives the payload of the JWT token which is set in AuthenticationService::generateRefreshToken.
+   * @returns The user object which will be attached to request.user.
    */
   async validate(
     request: ExpressRequest,
-    { sub: authenticatedUserUsername }: { sub: string },
-  ): Promise<UserData> {
-    const { username, hashedRefreshTokens } =
-      await this.userService.findByUsername(authenticatedUserUsername);
+    { sub: authenticatedUserId }: { sub: string },
+  ): Promise<RequestUser> {
+    const { username, hashedRefreshTokens } = await this.userService.findById(
+      authenticatedUserId,
+    );
 
     if (
       !(await RefreshTokenStrategy.tokenIsValid(
@@ -53,7 +54,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
       throw new UnauthorizedException();
     }
 
-    return { username };
+    return { id: authenticatedUserId, username };
   }
 
   private static async tokenIsValid(
@@ -61,7 +62,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
     hashes: string[],
   ): Promise<boolean> {
     return (
-      await Promise.all(hashes.map(async (hash) => await verify(hash, plain)))
+      await Promise.all(hashes.map(async (hash) => verify(hash, plain)))
     ).some(Boolean);
   }
 }

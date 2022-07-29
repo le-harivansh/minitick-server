@@ -1,22 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { UserService } from '../user/user.service';
 import { RegisterUserDto } from './dto/registration.dto';
 import { RegistrationController } from './registration.controller';
-import { RegistrationService } from './registration.service';
 
 describe(RegistrationController.name, () => {
   let registrationController: RegistrationController;
-  const registrationService = { registerUser: jest.fn() } as Pick<
-    RegistrationService,
-    'registerUser'
+  const userService = { createUser: jest.fn() } as Pick<
+    UserService,
+    'createUser'
   >;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
-          provide: RegistrationService,
-          useValue: registrationService,
+          provide: UserService,
+          useValue: userService,
         },
       ],
       controllers: [RegistrationController],
@@ -35,11 +35,9 @@ describe(RegistrationController.name, () => {
 
         await registrationController.register(registerUserDto);
 
-        expect(registrationService.registerUser).toHaveBeenCalledTimes(1);
+        expect(userService.createUser).toHaveBeenCalledTimes(1);
 
-        expect(registrationService.registerUser).toHaveBeenCalledWith(
-          registerUserDto,
-        );
+        expect(userService.createUser).toHaveBeenCalledWith(registerUserDto);
       });
     });
   });

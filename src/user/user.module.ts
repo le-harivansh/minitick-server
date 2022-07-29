@@ -5,14 +5,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schema/user.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { IsUniqueValidator } from './validator/is-unique.validator';
+import { IsUniqueValidatorConstraint } from './validator/is-unique.validator';
 
 @Module({
   imports: [
     ConfigModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
-  providers: [UserService, IsUniqueValidator],
+  providers: [UserService, IsUniqueValidatorConstraint],
   exports: [UserService],
   controllers: [UserController],
 })

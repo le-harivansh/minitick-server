@@ -16,33 +16,42 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
-  async createUser(userData: User) {
-    return this.userModel.create(userData);
+  async createUser({ password, ...userData }: User) {
+    return this.userModel.create({
+      ...userData,
+      password: await hash(password, { type: argon2id }),
+    });
   }
 
   async findByUsername(username: string) {
     return this.userModel.findOne({ username }).exec();
   }
 
-  async updateUser(
-    username: string,
-    payload: Partial<Omit<User, 'hashedRefreshTokens'>>,
-  ) {
-    if (Object.hasOwn(payload, 'password')) {
-      payload = {
-        ...payload,
-        password: await hash(payload.password, { type: argon2id }),
-      };
-    }
+  async findById(userId: string) {
+    return this.userModel.findById(userId).exec();
+  }
 
+  async updateUser(
+    userId: string,
+    { password, ...userData }: Partial<Omit<User, 'hashedRefreshTokens'>>,
+  ) {
     return this.userModel
-      .findOneAndUpdate({ username }, payload, { new: true })
+      .findByIdAndUpdate(
+        userId,
+        {
+          ...userData,
+          ...(password && {
+            password: await hash(password, { type: argon2id }),
+          }),
+        },
+        { new: true },
+      )
       .exec();
   }
 
-  async saveRefreshToken(username: string, token: string) {
+  async saveHashedRefreshToken(userId: string, token: string) {
     const nonExpiredHashedRefreshTokens = (
-      await this.findByUsername(username)
+      await this.findById(userId)
     ).hashedRefreshTokens.filter(({ expiresOn }) => expiresOn >= new Date());
 
     const newHashedRefreshToken: HashedRefreshToken = {
@@ -58,17 +67,14 @@ export class UserService {
     };
 
     await this.userModel
-      .updateOne(
-        { username },
-        {
-          $set: {
-            hashedRefreshTokens: [
-              ...nonExpiredHashedRefreshTokens,
-              newHashedRefreshToken,
-            ],
-          },
+      .findByIdAndUpdate(userId, {
+        $set: {
+          hashedRefreshTokens: [
+            ...nonExpiredHashedRefreshTokens,
+            newHashedRefreshToken,
+          ],
         },
-      )
+      })
       .exec();
   }
 }

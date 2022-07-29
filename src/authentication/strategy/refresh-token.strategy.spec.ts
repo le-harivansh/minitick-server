@@ -3,8 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { argon2id, hash } from 'argon2';
 import { Request as ExpressRequest } from 'express';
+import { ObjectId } from 'mongodb';
 
 import { HashedRefreshToken } from '../../user/schema/hashed-refresh-token.schema';
+import { User } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
 import { REFRESH_TOKEN } from '../constants';
 import { RefreshTokenStrategy } from './refresh-token.strategy';
@@ -41,6 +43,14 @@ describe(RefreshTokenStrategy.name, () => {
     const plainRefreshTokens = ['token-one', 'token-two', 'another-token'];
     const hashedRefreshTokens: HashedRefreshToken[] = [];
 
+    const user: Pick<User, 'username' | 'hashedRefreshTokens'> & {
+      _id: string;
+    } = {
+      _id: new ObjectId().toJSON(),
+      username: 'le-username',
+      hashedRefreshTokens,
+    };
+
     beforeAll(async () => {
       for await (const plainRefreshToken of plainRefreshTokens) {
         hashedRefreshTokens.push({
@@ -61,10 +71,7 @@ describe(RefreshTokenStrategy.name, () => {
           {
             provide: UserService,
             useValue: {
-              findByUsername: (username: string) => ({
-                username,
-                hashedRefreshTokens,
-              }),
+              findById: (userId: string) => (userId === user._id ? user : null),
             },
           },
         ],
@@ -78,19 +85,17 @@ describe(RefreshTokenStrategy.name, () => {
         ({ signedCookies: { [REFRESH_TOKEN]: token } } as ExpressRequest);
 
       test("it returns the user's data when a valid refresh-token is present in the request cookies", () => {
-        const username = 'username';
-
         expect(
           refreshTokenStrategy.validate(createRequest(plainRefreshTokens[1]), {
-            sub: username,
+            sub: user._id,
           }),
-        ).resolves.toMatchObject({ username });
+        ).resolves.toMatchObject({ id: user._id, username: user.username });
       });
 
       test('it throws an UnauthorizedException if the provided refresh-token is invalid', () => {
         expect(
           refreshTokenStrategy.validate(createRequest('invalid-token'), {
-            sub: 'le-user',
+            sub: user._id,
           }),
         ).rejects.toThrow(UnauthorizedException);
       });

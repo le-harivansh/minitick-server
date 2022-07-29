@@ -1,6 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { UserService } from '../../user/user.service';
 import { AuthenticationService } from '../authentication.service';
 import { LocalStrategy } from './local.strategy';
 
@@ -14,10 +15,20 @@ describe(LocalStrategy.name, () => {
         {
           provide: AuthenticationService,
           useValue: {
-            validateCredentials(username: string, password: string) {
+            credentialsAreValid(username: string, password: string) {
               return username === 'username' && password === 'password'
                 ? { username }
                 : undefined;
+            },
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            async findByUsername(username: string) {
+              return username === 'username'
+                ? { _id: '101010', username: 'username' }
+                : null;
             },
           },
         },
@@ -29,10 +40,11 @@ describe(LocalStrategy.name, () => {
 
   describe('validate', () => {
     describe('when called', () => {
-      test('it returns valid UserData when the correct credentials are provided', async () => {
+      test("it returns the corresponding user's data when correct credentials are provided", async () => {
         expect(
           await localStrategy.validate('username', 'password'),
         ).toMatchObject({
+          id: '101010',
           username: 'username',
         });
       });

@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { UserService } from '../user.service';
-import { IsUniqueValidator } from './is-unique.validator';
+import { IsUniqueValidatorConstraint } from './is-unique.validator';
 
-describe(IsUniqueValidator.name, () => {
-  let validator: IsUniqueValidator;
+describe(IsUniqueValidatorConstraint.name, () => {
+  let validator: IsUniqueValidatorConstraint;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,11 +19,11 @@ describe(IsUniqueValidator.name, () => {
             },
           },
         },
-        IsUniqueValidator,
+        IsUniqueValidatorConstraint,
       ],
     }).compile();
 
-    validator = module.get<IsUniqueValidator>(IsUniqueValidator);
+    validator = module.get(IsUniqueValidatorConstraint);
   });
 
   describe('validate', () => {

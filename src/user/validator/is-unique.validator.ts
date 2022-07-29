@@ -11,7 +11,9 @@ import { UserService } from '../user.service';
 
 @Injectable()
 @ValidatorConstraint({ async: true })
-export class IsUniqueValidator implements ValidatorConstraintInterface {
+export class IsUniqueValidatorConstraint
+  implements ValidatorConstraintInterface
+{
   constructor(private readonly userService: UserService) {}
 
   async validate(username: string): Promise<boolean> {
@@ -30,6 +32,6 @@ export default function IsUnique(validationOptions?: ValidationOptions) {
       propertyName,
       async: true,
       options: validationOptions,
-      validator: IsUniqueValidator,
+      validator: IsUniqueValidatorConstraint,
     });
 }

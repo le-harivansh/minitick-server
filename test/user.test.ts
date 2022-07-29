@@ -1,6 +1,4 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
 import { verify } from 'argon2';
@@ -15,8 +13,6 @@ import { User, UserDocument } from '../src/user/schema/user.schema';
 
 describe('User', () => {
   let application: INestApplication;
-  let configService: ConfigService;
-  let jwtService: JwtService;
 
   let userModel: Model<UserDocument>;
 
@@ -26,8 +22,6 @@ describe('User', () => {
     }).compile();
 
     application = moduleFixture.createNestApplication();
-    configService = application.get(ConfigService);
-    jwtService = application.get(JwtService);
 
     userModel = application.get<Model<UserDocument>>(getModelToken(User.name));
 
@@ -62,7 +56,7 @@ describe('User', () => {
       )._id;
 
       const loginResponse = await request(application.getHttpServer())
-        .post('/authentication/login')
+        .post('/login')
         .send(userCredentials)
         .expect(HttpStatus.OK);
 

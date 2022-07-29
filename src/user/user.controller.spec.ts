@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Request as ExpressRequest } from 'express';
+import { ObjectId } from 'mongodb';
 
-import { User, UserData } from './schema/user.schema';
+import { User } from './schema/user.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 
@@ -26,20 +26,15 @@ describe('UserController', () => {
   describe('update', () => {
     describe('when called', () => {
       test('it calls `UserService::updateUser` with the appropriate arguments', async () => {
-        const request = {
-          user: { username: 'le-user' },
-        } as unknown as ExpressRequest;
+        const userId = new ObjectId().toString();
         const payload: Partial<Omit<User, 'hashedRefreshTokens'>> = {
           username: 'new-username',
         };
 
-        await userController.update(request, payload);
+        await userController.update(userId, payload);
 
         expect(userService.updateUser).toHaveBeenCalledTimes(1);
-        expect(userService.updateUser).toHaveBeenCalledWith(
-          (request.user as UserData).username,
-          payload,
-        );
+        expect(userService.updateUser).toHaveBeenCalledWith(userId, payload);
       });
     });
   });

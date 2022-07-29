@@ -1,12 +1,10 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  Request as ExpressRequest,
-  Response as ExpressResponse,
-} from 'express';
+import { Response as ExpressResponse } from 'express';
+import { ObjectId } from 'mongodb';
 import ms from 'ms';
 
-import { UserData } from '../user/schema/user.schema';
+import { RequestUser } from '../user/schema/user.schema';
 import { UserService } from '../user/user.service';
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
@@ -21,7 +19,7 @@ describe(AuthenticationController.name, () => {
     generateAccessToken: jest.fn(() => accessToken),
     generateRefreshToken: jest.fn(() => refreshToken),
   };
-  const userService = { saveRefreshToken: jest.fn() };
+  const userService = { saveHashedRefreshToken: jest.fn() };
   const configService = {
     getOrThrow: jest.fn((key: string) => {
       switch (key) {
@@ -37,11 +35,11 @@ describe(AuthenticationController.name, () => {
 
   let authenticationController: AuthenticationController;
 
-  const requestMock = {
-    user: { username: 'user-1000' } as UserData,
-  } as unknown as ExpressRequest;
-
-  const responseMock = { cookie: jest.fn() };
+  const user: RequestUser = {
+    id: new ObjectId().toString(),
+    username: 'user-1000',
+  };
+  const responseMock = { cookie: jest.fn() } as unknown as ExpressResponse;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -72,44 +70,32 @@ describe(AuthenticationController.name, () => {
   describe('regenerateTokens', () => {
     describe('when called', () => {
       test("it calls `AuthenticationService::generateAccessToken` with the authenticated user's data as its argument", async () => {
-        await authenticationController['regenerateTokens'](
-          requestMock,
-          responseMock as unknown as ExpressResponse,
-        );
+        await authenticationController['regenerateTokens'](user, responseMock);
 
         expect(authenticationService.generateAccessToken).toHaveBeenCalledWith(
-          requestMock.user,
+          user,
         );
       });
 
       test("it calls `AuthenticationService::generateRefreshToken` with the authenticated user's data as its argument", async () => {
-        await authenticationController['regenerateTokens'](
-          requestMock,
-          responseMock as unknown as ExpressResponse,
-        );
+        await authenticationController['regenerateTokens'](user, responseMock);
 
         expect(authenticationService.generateRefreshToken).toHaveBeenCalledWith(
-          requestMock.user,
+          user,
         );
       });
 
       test('it calls `UserService::saveRefreshToken` with the appropriate arguments', async () => {
-        await authenticationController['regenerateTokens'](
-          requestMock,
-          responseMock as unknown as ExpressResponse,
-        );
+        await authenticationController['regenerateTokens'](user, responseMock);
 
-        expect(userService.saveRefreshToken).toHaveBeenCalledWith(
-          (requestMock.user as UserData).username,
+        expect(userService.saveHashedRefreshToken).toHaveBeenCalledWith(
+          user.id,
           refreshToken,
         );
       });
 
       test('it creates the access-token cookie via `response.cookie`', async () => {
-        await authenticationController['regenerateTokens'](
-          requestMock,
-          responseMock as unknown as ExpressResponse,
-        );
+        await authenticationController['regenerateTokens'](user, responseMock);
 
         expect(configService.getOrThrow).toHaveBeenCalledWith(
           'authentication.jwt.accessToken.duration',
@@ -130,10 +116,7 @@ describe(AuthenticationController.name, () => {
       });
 
       test('it creates the refresh-token cookie via `response.cookie`', async () => {
-        await authenticationController['regenerateTokens'](
-          requestMock,
-          responseMock as unknown as ExpressResponse,
-        );
+        await authenticationController['regenerateTokens'](user, responseMock);
 
         expect(configService.getOrThrow).toHaveBeenCalledWith(
           'authentication.jwt.refreshToken.duration',
