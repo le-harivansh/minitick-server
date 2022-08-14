@@ -13,20 +13,25 @@ export type ConfigurationMap<T> = T extends Value
   ? EnvRule
   : { [Property in keyof T]: ConfigurationMap<T[Property]> };
 
-type EnvMap<T> = T extends Value
+type EnvironmentMap<T> = T extends Value
   ? string
-  : { [Property in keyof T]: EnvMap<T[Property]> };
-type JoiMap<T> = T extends Value
-  ? Rules
-  : { [Property in keyof T]: JoiMap<T[Property]> };
+  : { [Property in keyof T]: EnvironmentMap<T[Property]> };
 
-type ReturnMap<T, U> = U extends 'env'
-  ? EnvMap<T>
+type RulesMap<T> = T extends Value
+  ? Rules
+  : { [Property in keyof T]: RulesMap<T[Property]> };
+
+type ReturnMap<T, U extends keyof EnvRule> = U extends 'env'
+  ? EnvironmentMap<T>
   : U extends 'rules'
-  ? JoiMap<T>
+  ? RulesMap<T>
   : never;
 
-type Argument<U> = U extends 'env' ? string : U extends 'rules' ? Rules : never;
+type Argument<U extends keyof EnvRule> = U extends 'env'
+  ? string
+  : U extends 'rules'
+  ? Rules
+  : never;
 
 /**
  * Similar to @nestjs/config::registerAs, but also validates the environment values passed to it.
