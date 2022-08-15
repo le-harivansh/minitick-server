@@ -52,6 +52,7 @@ describe(TokenService.name, () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('generateAccessToken', () => {
@@ -246,6 +247,58 @@ describe(TokenService.name, () => {
           response,
         );
       });
+    });
+  });
+
+  describe('clearTokenCookieFromResponse', () => {
+    test('it calls `Response.clearCookie` with the correct options', () => {
+      const cookieName = 'le-cookie';
+      const response = { clearCookie: jest.fn() } as unknown as ExpressResponse;
+
+      TokenService.clearTokenCookieFromResponse(cookieName, response);
+
+      expect(response.clearCookie).toBeCalledWith(cookieName, {
+        secure: true,
+        httpOnly: true,
+        signed: true,
+        sameSite: 'lax',
+      });
+    });
+  });
+
+  describe('clearAccessTokenCookieFromResponse', () => {
+    test('it calls `TokenService.clearTokenCookieFromResponse` with the correct options', () => {
+      const response = { clearCookie: jest.fn() } as unknown as ExpressResponse;
+
+      const clearTokenCookieFromResponseSpy = jest.spyOn(
+        TokenService,
+        'clearTokenCookieFromResponse',
+      );
+
+      TokenService.clearAccessTokenCookieFromResponse(response);
+
+      expect(clearTokenCookieFromResponseSpy).toBeCalledWith(
+        ACCESS_TOKEN,
+        response,
+      );
+    });
+  });
+
+  describe('clearRefreshTokenCookieFromResponse', () => {
+    test('it calls `TokenService.clearTokenCookieFromResponse` with the correct options', () => {
+      const response = { clearCookie: jest.fn() } as unknown as ExpressResponse;
+
+      const clearTokenCookieFromResponseSpy = jest.spyOn(
+        TokenService,
+        'clearTokenCookieFromResponse',
+      );
+
+      TokenService.clearRefreshTokenCookieFromResponse(response);
+
+      expect(clearTokenCookieFromResponseSpy).toBeCalledWith(
+        REFRESH_TOKEN,
+        response,
+      );
     });
   });
 });

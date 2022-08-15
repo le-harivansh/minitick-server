@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { verify } from 'argon2';
+import { argon2id, hash, verify } from 'argon2';
 import { ObjectId } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { Model } from 'mongoose';
@@ -246,54 +246,67 @@ describe(UserService.name, () => {
           verify(hashedRefreshToken, plainRefreshToken),
         ).resolves.toBeTruthy();
       });
+    });
+  });
 
-      test("it prunes a user's stale tokens", async () => {
-        const userData: User = {
-          username: 'username-01',
-          password: 'le-password',
-          hashedRefreshTokens: [
-            {
-              hash: 'expired-token',
-              expiresOn: new Date(Date.now() + 1000 * 60 * 60 * -1), // 1 hour in the past
-            },
-            {
-              hash: 'another-expired-token',
-              expiresOn: new Date(Date.now() + 1000 * 60 * -10), // 10 minutes in the past
-            },
-            {
-              hash: 'valid-token',
-              expiresOn: new Date(Date.now() + 1000 * 60 * 15), // 15 minutes in the future
-            },
-          ],
-        };
+  describe('pruneExpiredTokens', () => {
+    test("it removes a user's stale tokens", async () => {
+      const userData: User = {
+        username: 'username-01',
+        password: 'le-password',
+        hashedRefreshTokens: [
+          {
+            hash: 'expired-token',
+            expiresOn: new Date(Date.now() - 1000 * 60 * 60 * 1), // 1 hour in the past
+          },
+          {
+            hash: 'another-expired-token',
+            expiresOn: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes in the past
+          },
+          {
+            hash: 'valid-token',
+            expiresOn: new Date(Date.now() + 1000 * 60 * 15), // 15 minutes in the future
+          },
+        ],
+      };
 
-        const newUser = await userModel.create(userData);
+      const { _id: userId } = await userModel.create(userData);
 
-        expect(newUser.hashedRefreshTokens).toHaveLength(3);
+      await userService['pruneExpiredTokens'](userId); // 2 hashedRefreshTokens are pruned
 
-        const newTokenPlain = 'new-token';
+      const { hashedRefreshTokens } = await userModel.findById(userId).exec();
 
-        await userService.saveHashedRefreshToken(newUser._id, newTokenPlain);
+      expect(hashedRefreshTokens).toHaveLength(1);
+    });
+  });
 
-        const retrievedUser = await userModel.findById(newUser._id).exec();
+  describe('removeHashedRefreshToken', () => {
+    test('it removes the hash of the specified refresh token', async () => {
+      const plainTokenName = 'token-one';
+      const hashedTokenName = await hash(plainTokenName, { type: argon2id });
 
-        expect(retrievedUser.hashedRefreshTokens).toHaveLength(2); // prune 2 & add 1
+      const userData: User = {
+        username: 'username-02',
+        password: 'le-password',
+        hashedRefreshTokens: [
+          {
+            hash: hashedTokenName,
+            expiresOn: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours in the past
+          },
+          {
+            hash: await hash('token-two', { type: argon2id }),
+            expiresOn: new Date(Date.now() + 1000 * 60 * 10), // 10 minutes in the future
+          },
+        ],
+      };
 
-        expect(
-          retrievedUser.hashedRefreshTokens.filter(
-            ({ hash }) => hash === 'valid-token',
-          ),
-        ).toHaveLength(1);
+      const { _id: userId } = await userModel.create(userData);
 
-        expect(
-          verify(
-            retrievedUser.hashedRefreshTokens.filter(
-              ({ hash }) => hash !== 'valid-token',
-            )[0].hash,
-            newTokenPlain,
-          ),
-        ).resolves.toBeTruthy();
-      });
+      await userService.removeHashedRefreshToken(userId, plainTokenName);
+
+      const { hashedRefreshTokens } = await userModel.findById(userId).exec();
+
+      expect(hashedRefreshTokens).toHaveLength(1);
     });
   });
 });

@@ -23,6 +23,8 @@ describe('User Authentication', () => {
 
   let userModel: Model<UserDocument>;
 
+  let cookieSecret: string;
+
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
       imports: [ApplicationModule],
@@ -37,6 +39,9 @@ describe('User Authentication', () => {
     useContainer(application.select(ApplicationModule), {
       fallbackOnErrors: true,
     });
+
+    cookieSecret =
+      configService.getOrThrow<CookieConfiguration['secret']>('cookie.secret');
 
     await application.init();
   });
@@ -196,6 +201,91 @@ describe('User Authentication', () => {
           ).toBeTruthy();
         });
       });
+    });
+  });
+
+  describe('/POST logout', () => {
+    const userCredentials: Pick<User, 'username' | 'password'> = {
+      username: 'authentication-username-002',
+      password: 'authentication-password-002',
+    };
+
+    let userId: string;
+    let currentRefreshTokenCookieString: string;
+
+    beforeEach(async () => {
+      await request(application.getHttpServer())
+        .post('/register')
+        .send(userCredentials)
+        .expect(HttpStatus.CREATED);
+
+      const loginResponse = await request(application.getHttpServer())
+        .post('/login')
+        .send(userCredentials)
+        .expect(HttpStatus.OK);
+
+      currentRefreshTokenCookieString = loginResponse
+        .get('Set-Cookie')
+        .filter((cookieString: string) =>
+          cookieString.startsWith(REFRESH_TOKEN),
+        )[0];
+
+      userId = (
+        await userModel.findOne({ username: userCredentials.username }).exec()
+      )._id;
+    });
+
+    afterEach(async () => {
+      await userModel.findByIdAndDelete(userId).exec();
+    });
+
+    test("it returns the 'no-content' status code", () => {
+      return request(application.getHttpServer())
+        .delete('/logout')
+        .set('Cookie', currentRefreshTokenCookieString)
+        .expect(HttpStatus.NO_CONTENT);
+    });
+
+    test('it clears the access-token cookie', async () => {
+      const logoutResponse = await request(application.getHttpServer())
+        .delete('/logout')
+        .set('Cookie', currentRefreshTokenCookieString);
+
+      const accessTokenCookieString = logoutResponse
+        .get('Set-Cookie')
+        .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN))[0];
+
+      const accessTokenExpiryDate = new Date(
+        parse(accessTokenCookieString)['Expires'],
+      );
+
+      expect(new Date(accessTokenExpiryDate) < new Date()).toBeTruthy();
+    });
+
+    test('it clears the refresh-token cookie', async () => {
+      const logoutResponse = await request(application.getHttpServer())
+        .delete('/logout')
+        .set('Cookie', currentRefreshTokenCookieString);
+
+      const refreshTokenCookieString = logoutResponse
+        .get('Set-Cookie')
+        .filter((cookieString) => cookieString.startsWith(REFRESH_TOKEN))[0];
+
+      const refreshTokenExpiryDate = new Date(
+        parse(refreshTokenCookieString)['Expires'],
+      );
+
+      expect(new Date(refreshTokenExpiryDate) < new Date()).toBeTruthy();
+    });
+
+    test('it removes the hash of the current refresh token from the database', async () => {
+      await request(application.getHttpServer())
+        .delete('/logout')
+        .set('Cookie', currentRefreshTokenCookieString);
+
+      expect(
+        (await userModel.findById(userId).exec()).hashedRefreshTokens,
+      ).toHaveLength(0);
     });
   });
 });

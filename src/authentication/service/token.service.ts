@@ -53,6 +53,14 @@ export class TokenService {
     return refreshToken;
   }
 
+  static clearAccessTokenCookieFromResponse(response: ExpressResponse) {
+    TokenService.clearTokenCookieFromResponse(ACCESS_TOKEN, response);
+  }
+
+  static clearRefreshTokenCookieFromResponse(response: ExpressResponse) {
+    TokenService.clearTokenCookieFromResponse(REFRESH_TOKEN, response);
+  }
+
   async generateAccessToken({ id: userId }: RequestUser) {
     return this.jwtService.signAsync(
       { sub: userId },
@@ -92,6 +100,18 @@ export class TokenService {
       httpOnly: true,
       signed: true,
       maxAge,
+      sameSite: 'lax',
+    });
+  }
+
+  static clearTokenCookieFromResponse(
+    cookieName: string,
+    response: ExpressResponse,
+  ) {
+    response.clearCookie(cookieName, {
+      secure: true,
+      httpOnly: true,
+      signed: true,
       sameSite: 'lax',
     });
   }

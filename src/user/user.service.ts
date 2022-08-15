@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { argon2id, hash } from 'argon2';
+import { argon2id, hash, verify } from 'argon2';
 import { Model } from 'mongoose';
 import ms from 'ms';
 
@@ -54,9 +54,7 @@ export class UserService {
   }
 
   async saveHashedRefreshToken(userId: string, token: string) {
-    const nonExpiredHashedRefreshTokens = (
-      await this.findById(userId)
-    ).hashedRefreshTokens.filter(({ expiresOn }) => expiresOn >= new Date());
+    await this.pruneExpiredTokens(userId);
 
     const newHashedRefreshToken: HashedRefreshToken = {
       hash: await hash(token, { type: argon2id }),
@@ -72,13 +70,35 @@ export class UserService {
 
     await this.userModel
       .findByIdAndUpdate(userId, {
-        $set: {
-          hashedRefreshTokens: [
-            ...nonExpiredHashedRefreshTokens,
-            newHashedRefreshToken,
-          ],
-        },
+        $push: { hashedRefreshTokens: newHashedRefreshToken },
       })
+      .exec();
+  }
+
+  async removeHashedRefreshToken(userId: string, plainRefreshToken: string) {
+    const filteredHashedRefreshTokens: HashedRefreshToken[] = [];
+    const { hashedRefreshTokens } = await this.findById(userId);
+
+    for (const hashedRefreshToken of hashedRefreshTokens) {
+      if (!(await verify(hashedRefreshToken.hash, plainRefreshToken))) {
+        filteredHashedRefreshTokens.push(hashedRefreshToken);
+      }
+    }
+
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $set: { hashedRefreshTokens: filteredHashedRefreshTokens },
+      })
+      .exec();
+  }
+
+  private async pruneExpiredTokens(userId: string) {
+    const hashedRefreshTokens = (
+      await this.findById(userId)
+    ).hashedRefreshTokens.filter(({ expiresOn }) => expiresOn >= new Date());
+
+    await this.userModel
+      .findByIdAndUpdate(userId, { $set: { hashedRefreshTokens } })
       .exec();
   }
 }
