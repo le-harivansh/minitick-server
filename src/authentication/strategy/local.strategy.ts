@@ -4,8 +4,8 @@ import { Strategy } from 'passport-local';
 
 import { RequestUser } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
-import { AuthenticationService } from '../authentication.service';
 import { LOCAL_GUARD } from '../constants';
+import { AuthenticationService } from '../service/authentication.service';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy, LOCAL_GUARD) {

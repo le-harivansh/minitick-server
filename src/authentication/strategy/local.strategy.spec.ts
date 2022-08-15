@@ -2,7 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { UserService } from '../../user/user.service';
-import { AuthenticationService } from '../authentication.service';
+import { AuthenticationService } from '../service/authentication.service';
 import { LocalStrategy } from './local.strategy';
 
 describe(LocalStrategy.name, () => {

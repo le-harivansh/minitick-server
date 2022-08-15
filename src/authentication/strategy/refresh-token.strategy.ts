@@ -41,20 +41,19 @@ export class RefreshTokenStrategy extends PassportStrategy(
     request: ExpressRequest,
     { sub: authenticatedUserId }: { sub: string },
   ): Promise<RequestUser> {
-    const { username, hashedRefreshTokens } = await this.userService.findById(
-      authenticatedUserId,
-    );
+    const retrievedUser = await this.userService.findById(authenticatedUserId);
 
     if (
+      !retrievedUser ||
       !(await RefreshTokenStrategy.tokenIsValid(
         request.signedCookies[REFRESH_TOKEN],
-        hashedRefreshTokens.map(({ hash }) => hash),
+        retrievedUser.hashedRefreshTokens.map(({ hash }) => hash),
       ))
     ) {
       throw new UnauthorizedException();
     }
 
-    return { id: authenticatedUserId, username };
+    return { id: authenticatedUserId, username: retrievedUser.username };
   }
 
   private static async tokenIsValid(

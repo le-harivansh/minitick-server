@@ -60,8 +60,8 @@ describe(UserService.name, () => {
   });
 
   afterAll(async () => {
-    await mongoMemoryServer.stop();
     await application.close();
+    await mongoMemoryServer.stop();
   });
 
   describe('createUser', () => {

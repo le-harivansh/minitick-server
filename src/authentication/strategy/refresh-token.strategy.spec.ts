@@ -92,6 +92,14 @@ describe(RefreshTokenStrategy.name, () => {
         ).resolves.toMatchObject({ id: user._id, username: user.username });
       });
 
+      test("it throws an UnauthorizedException if the provided user's id is invalid", () => {
+        expect(
+          refreshTokenStrategy.validate(createRequest(plainRefreshTokens[0]), {
+            sub: null,
+          }),
+        ).rejects.toThrow(UnauthorizedException);
+      });
+
       test('it throws an UnauthorizedException if the provided refresh-token is invalid', () => {
         expect(
           refreshTokenStrategy.validate(createRequest('invalid-token'), {
