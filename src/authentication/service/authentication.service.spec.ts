@@ -43,24 +43,22 @@ describe(AuthenticationService.name, () => {
   });
 
   describe('credentialsAreValid', () => {
-    describe('when called', () => {
-      test('it returns true if correct user-credentials are passed', async () => {
-        expect(
-          authenticationService.credentialsAreValid(
-            requestUser.username,
-            userPassword,
-          ),
-        ).resolves.toBe(true);
-      });
+    it('returns true if correct user-credentials are passed', async () => {
+      expect(
+        authenticationService.credentialsAreValid(
+          requestUser.username,
+          userPassword,
+        ),
+      ).resolves.toBe(true);
+    });
 
-      test('it returns false if incorrect user-credentials are passed', async () => {
-        expect(
-          authenticationService.credentialsAreValid(
-            requestUser.username,
-            'wrong-password',
-          ),
-        ).resolves.toBe(false);
-      });
+    it('returns false if incorrect user-credentials are passed', async () => {
+      expect(
+        authenticationService.credentialsAreValid(
+          requestUser.username,
+          'wrong-password',
+        ),
+      ).resolves.toBe(false);
     });
   });
 });

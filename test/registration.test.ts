@@ -7,9 +7,10 @@ import request from 'supertest';
 
 import { ApplicationModule } from '../src/application.module';
 import { RegisterUserDto } from '../src/registration/dto/registration.dto';
+import { RegistrationController } from '../src/registration/registration.controller';
 import { User, UserDocument } from '../src/user/schema/user.schema';
 
-describe('User Registration', () => {
+describe(RegistrationController.name, () => {
   let application: INestApplication;
   let userModel: Model<UserDocument>;
 
@@ -33,7 +34,7 @@ describe('User Registration', () => {
   });
 
   describe('/POST regiser', () => {
-    describe('for a successful user registration', () => {
+    describe('[on success]', () => {
       const registerUserDto: RegisterUserDto = {
         username: 'registration-username-001',
         password: 'registration-password-001',
@@ -45,26 +46,15 @@ describe('User Registration', () => {
           .exec();
       });
 
-      test("it returns the 'created' HTTP status-code", () => {
+      it("returns the 'created' http status-code", () => {
         return request(application.getHttpServer())
           .post('/register')
           .send(registerUserDto)
           .expect(HttpStatus.CREATED);
       });
-
-      test('it saves a new user to the database', async () => {
-        await request(application.getHttpServer())
-          .post('/register')
-          .send(registerUserDto)
-          .expect(HttpStatus.CREATED);
-
-        expect(
-          userModel.findOne({ username: registerUserDto.username }).exec(),
-        ).resolves.toMatchObject({ username: registerUserDto.username });
-      });
     });
 
-    describe('for an unsuccessful user registration', () => {
+    describe('[fails because]', () => {
       const registerUserDto: RegisterUserDto = {
         username: 'registration-username-002',
         password: 'registration-password-002',
@@ -83,8 +73,8 @@ describe('User Registration', () => {
           .exec();
       });
 
-      test.each([
-        // IsNotEmpty
+      it.each([
+        // empty checks
         { username: '', password: '' },
         { username: 'registration-username-003', password: '' },
         { username: '', password: 'registration-password-003' },
@@ -101,7 +91,7 @@ describe('User Registration', () => {
         // username: IsUnique
         registerUserDto,
       ])(
-        'it returns an error message if the payload is invalid',
+        'payload is invalid [$username, $password]',
         ({ username, password }) => {
           return request(application.getHttpServer())
             .post('/register')

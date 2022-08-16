@@ -7,20 +7,16 @@ import {
 } from './register-configuration';
 
 describe(isSimilar.name, () => {
-  describe('when called', () => {
-    test('it returns true if two provided arrays are similar', () => {
-      expect(
-        isSimilar(['a', 'b', 'c', 'd'], ['c', 'b', 'd', 'a']),
-      ).toBeTruthy();
-    });
+  it('returns true if two provided arrays are similar', () => {
+    expect(isSimilar(['a', 'b', 'c', 'd'], ['c', 'b', 'd', 'a'])).toBeTruthy();
+  });
 
-    test('it returns false if two provided arrays do not have the same length', () => {
-      expect(isSimilar([1, 5, 3, 7, 5], [1, 5, 3, 7])).toBeFalsy();
-    });
+  it('returns false if two provided arrays do not have the same length', () => {
+    expect(isSimilar([1, 5, 3, 7, 5], [1, 5, 3, 7])).toBeFalsy();
+  });
 
-    test('it returns false if two provided arrays do not have the same items', () => {
-      expect(isSimilar(['a', 44, 'b', 55], ['z', 44, 'f', 66])).toBeFalsy();
-    });
+  it('returns false if two provided arrays do not have the same items', () => {
+    expect(isSimilar(['a', 44, 'b', 55], ['z', 44, 'f', 66])).toBeFalsy();
   });
 });
 
@@ -47,7 +43,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
       },
     };
 
-    test("it correctly creates a new configuration object with the 'env' key as the value", () => {
+    it("correctly creates a new configuration object with the 'env' key as the value", () => {
       expect(
         filterAndTransformConfigurationForProperty<Configuration, 'env'>(
           'env',
@@ -60,7 +56,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
       });
     });
 
-    test("it correctly creates a new configuration object with the 'rules' key as the value", () => {
+    it("correctly creates a new configuration object with the 'rules' key as the value", () => {
       expect(
         filterAndTransformConfigurationForProperty<Configuration, 'rules'>(
           'rules',
@@ -73,7 +69,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
       });
     });
 
-    test("it transforms the 'ultimate' values according to the transformer passed", () => {
+    it("transforms the 'ultimate' values according to the transformer passed", () => {
       expect(
         filterAndTransformConfigurationForProperty<Configuration, 'env'>(
           'env',
@@ -136,7 +132,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
       },
     };
 
-    test('it correctly creates a new configuration object with the `env` key as the value', () => {
+    it('correctly creates a new configuration object with the `env` key as the value', () => {
       expect(
         filterAndTransformConfigurationForProperty<Configuration, 'env'>(
           'env',
@@ -159,7 +155,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
       });
     });
 
-    test('it correctly creates a new configuration object with the `rules` key as the value', () => {
+    it('correctly creates a new configuration object with the `rules` key as the value', () => {
       expect(
         filterAndTransformConfigurationForProperty<Configuration, 'rules'>(
           'rules',
@@ -182,7 +178,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
       });
     });
 
-    test('it transforms the resolved values according to the transformer passed', () => {
+    it('transforms the resolved values according to the transformer passed', () => {
       expect(
         filterAndTransformConfigurationForProperty<Configuration, 'env'>(
           'env',

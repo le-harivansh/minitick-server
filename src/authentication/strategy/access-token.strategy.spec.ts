@@ -37,14 +37,12 @@ describe(AccessTokenStrategy.name, () => {
   });
 
   describe('validate', () => {
-    describe('when called', () => {
-      test('it returns valid user data', async () => {
-        expect(
-          accessTokenStrategy.validate({ sub: user._id }),
-        ).resolves.toMatchObject({
-          id: user._id,
-          username: user.username,
-        });
+    it('returns valid user data', async () => {
+      expect(
+        accessTokenStrategy.validate({ sub: user._id }),
+      ).resolves.toMatchObject({
+        id: user._id,
+        username: user.username,
       });
     });
   });

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ExecutionContext,
   InternalServerErrorException,
   createParamDecorator,
@@ -13,12 +14,12 @@ export function getUserFromRequest(
   const user = context.switchToHttp().getRequest().user as RequestUser;
 
   if (!user) {
-    throw new InternalServerErrorException('Cannot retrieve user.');
+    throw new BadRequestException('Cannot retrieve the user.');
   }
 
   if (property && !Object.hasOwn(user, property)) {
     throw new InternalServerErrorException(
-      `Property '${property}' does not exist on the user object.`,
+      `Property '${property}' does not exist on the user.`,
     );
   }
 

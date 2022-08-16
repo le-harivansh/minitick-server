@@ -27,16 +27,12 @@ describe(IsUniqueValidatorConstraint.name, () => {
   });
 
   describe('validate', () => {
-    describe('when called', () => {
-      test('it returns false if a user exists', () => {
-        expect(validator.validate('existing-username')).resolves.toBeFalsy();
-      });
+    it('returns false if a user exists', () => {
+      expect(validator.validate('existing-username')).resolves.toBe(false);
+    });
 
-      test('it returns true if a user does not exist', () => {
-        expect(
-          validator.validate('nonexisting-username'),
-        ).resolves.toBeTruthy();
-      });
+    it('returns true if a user does not exist', () => {
+      expect(validator.validate('nonexisting-username')).resolves.toBe(true);
     });
   });
 });

@@ -53,11 +53,11 @@ export class UserService {
     return this.userModel.findByIdAndDelete(userId).exec();
   }
 
-  async saveHashedRefreshToken(userId: string, token: string) {
+  async saveHashedRefreshToken(userId: string, plainRefreshToken: string) {
     await this.pruneExpiredTokens(userId);
 
     const newHashedRefreshToken: HashedRefreshToken = {
-      hash: await hash(token, { type: argon2id }),
+      hash: await hash(plainRefreshToken, { type: argon2id }),
       expiresOn: new Date(
         Date.now() +
           ms(
@@ -82,6 +82,30 @@ export class UserService {
     for (const hashedRefreshToken of hashedRefreshTokens) {
       if (!(await verify(hashedRefreshToken.hash, plainRefreshToken))) {
         filteredHashedRefreshTokens.push(hashedRefreshToken);
+      }
+    }
+
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $set: { hashedRefreshTokens: filteredHashedRefreshTokens },
+      })
+      .exec();
+  }
+
+  async removeAllOtherHashedRefreshTokens(userId: string, except: string) {
+    const filteredHashedRefreshTokens: HashedRefreshToken[] = [];
+    const { hashedRefreshTokens } = await this.findById(userId);
+
+    for (const hashedRefreshToken of hashedRefreshTokens) {
+      if (await verify(hashedRefreshToken.hash, except)) {
+        filteredHashedRefreshTokens.push(hashedRefreshToken);
+
+        /**
+         * We know that hashed refresh-tokens are unique for every user.
+         * We can therefore break the loop after finding the first one -
+         * since it will be the only one that satisfies the `verify` predicate.
+         */
+        break;
       }
     }
 

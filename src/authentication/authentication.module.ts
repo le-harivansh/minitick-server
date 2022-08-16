@@ -6,9 +6,9 @@ import { PassportModule } from '@nestjs/passport';
 import { UserModule } from '../user/user.module';
 import authenticationConfig from './authentication.config';
 import { AuthenticationController } from './controller/authentication.controller';
-import { TokenController } from './controller/token.controller';
+import { TokenRefreshController } from './controller/token-refresh.controller';
 import { AuthenticationService } from './service/authentication.service';
-import { TokenService } from './service/token.service';
+import { TokenRefreshService } from './service/token-refresh.service';
 import { AccessTokenStrategy } from './strategy/access-token.strategy';
 import { LocalStrategy } from './strategy/local.strategy';
 import { RefreshTokenStrategy } from './strategy/refresh-token.strategy';
@@ -25,8 +25,8 @@ import { RefreshTokenStrategy } from './strategy/refresh-token.strategy';
     LocalStrategy,
     AccessTokenStrategy,
     RefreshTokenStrategy,
-    TokenService,
+    TokenRefreshService,
   ],
-  controllers: [AuthenticationController, TokenController],
+  controllers: [AuthenticationController, TokenRefreshController],
 })
 export class AuthenticationModule {}

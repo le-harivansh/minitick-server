@@ -1,29 +1,34 @@
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test } from '@nestjs/testing';
-import { verify } from 'argon2';
 import { useContainer } from 'class-validator';
 import { parse } from 'cookie';
-import { signedCookie } from 'cookie-parser';
 import { Model } from 'mongoose';
+import { Response } from 'superagent';
 import request from 'supertest';
 
 import { ApplicationModule } from '../src/application.module';
-import { AuthenticationConfiguration } from '../src/authentication/authentication.config';
-import { ACCESS_TOKEN, REFRESH_TOKEN } from '../src/authentication/constants';
-import { CookieConfiguration } from '../src/cookie/cookie.config';
+import {
+  ACCESS_TOKEN,
+  PASSWORD_CONFIRMATION_TOKEN,
+  REFRESH_TOKEN,
+} from '../src/authentication/constants';
+import { AuthenticationController } from '../src/authentication/controller/authentication.controller';
+import { LogoutScope } from '../src/authentication/dto/logout.dto';
 import { User, UserDocument } from '../src/user/schema/user.schema';
 
-describe('User Authentication', () => {
+describe(AuthenticationController.name, () => {
   let application: INestApplication;
-  let configService: ConfigService;
-  let jwtService: JwtService;
 
   let userModel: Model<UserDocument>;
+  let userId: string;
 
-  let cookieSecret: string;
+  const userCredentials: Pick<User, 'username' | 'password'> = {
+    username: 'authentication-username',
+    password: 'authentication-password',
+  };
+
+  let loginResponse: Response;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -31,8 +36,6 @@ describe('User Authentication', () => {
     }).compile();
 
     application = moduleFixture.createNestApplication();
-    configService = application.get(ConfigService);
-    jwtService = application.get(JwtService);
 
     userModel = application.get<Model<UserDocument>>(getModelToken(User.name));
 
@@ -40,10 +43,27 @@ describe('User Authentication', () => {
       fallbackOnErrors: true,
     });
 
-    cookieSecret =
-      configService.getOrThrow<CookieConfiguration['secret']>('cookie.secret');
-
     await application.init();
+  });
+
+  beforeEach(async () => {
+    await request(application.getHttpServer())
+      .post('/register')
+      .send(userCredentials)
+      .expect(HttpStatus.CREATED);
+
+    userId = (
+      await userModel.findOne({ username: userCredentials.username }).exec()
+    )._id;
+
+    loginResponse = await request(application.getHttpServer())
+      .post('/login')
+      .send(userCredentials)
+      .expect(HttpStatus.OK);
+  });
+
+  afterEach(async () => {
+    await userModel.findByIdAndDelete(userId).exec();
   });
 
   afterAll(async () => {
@@ -51,241 +71,163 @@ describe('User Authentication', () => {
   });
 
   describe('/POST login', () => {
-    describe('for a successful authentication attempt', () => {
-      const userCredentials: Pick<User, 'username' | 'password'> = {
-        username: 'authentication-username-001',
-        password: 'authentication-password-001',
-      };
-
-      let userId: string;
-
-      let cookieSecret: string;
-
-      beforeAll(() => {
-        cookieSecret =
-          configService.getOrThrow<CookieConfiguration['secret']>(
-            'cookie.secret',
-          );
+    it("returns the user's data", () => {
+      expect(Object.keys(loginResponse.body)).toContain('id');
+      expect(loginResponse.body).toMatchObject({
+        username: userCredentials.username,
       });
+    });
 
-      beforeEach(async () => {
-        await request(application.getHttpServer())
-          .post('/register')
-          .send(userCredentials)
-          .expect(HttpStatus.CREATED);
+    it('returns an access-token in a cookie', () => {
+      expect(
+        loginResponse
+          .get('Set-Cookie')
+          .filter((cookieString: string) =>
+            cookieString.startsWith(ACCESS_TOKEN),
+          ),
+      ).toHaveLength(1);
+    });
 
-        userId = (
-          await userModel.findOne({ username: userCredentials.username }).exec()
-        )._id;
-      });
+    it('returns a refresh-token in a cookie', () => {
+      expect(
+        loginResponse
+          .get('Set-Cookie')
+          .filter((cookieString: string) =>
+            cookieString.startsWith(REFRESH_TOKEN),
+          ),
+      ).toHaveLength(1);
+    });
 
-      afterEach(async () => {
-        await userModel.findByIdAndDelete(userId).exec();
-      });
-
-      test("it returns the 'success' status code", () => {
-        return request(application.getHttpServer())
-          .post('/login')
-          .send(userCredentials)
-          .expect(HttpStatus.OK);
-      });
-
-      describe('[access_token]', () => {
-        test('an access-token is returned in a cookie', async () => {
-          const loginResponse = await request(application.getHttpServer())
-            .post('/login')
-            .send(userCredentials);
-
-          expect(
-            loginResponse
-              .get('Set-Cookie')
-              .filter((cookieString: string) =>
-                cookieString.startsWith(ACCESS_TOKEN),
-              ),
-          ).toHaveLength(1);
-        });
-
-        test('the returned access-token contains appropriate data', async () => {
-          const loginResponse = await request(application.getHttpServer())
-            .post('/login')
-            .send(userCredentials);
-
-          const accessTokenCookieString = loginResponse
-            .get('Set-Cookie')
-            .filter((cookieString: string) =>
-              cookieString.startsWith(ACCESS_TOKEN),
-            )[0];
-
-          const accessToken = signedCookie(
-            parse(accessTokenCookieString)[ACCESS_TOKEN],
-            cookieSecret,
-          ) as string;
-
-          const accessTokenSecret = configService.getOrThrow<
-            AuthenticationConfiguration['jwt']['accessToken']['secret']
-          >('authentication.jwt.accessToken.secret');
-
-          expect(
-            jwtService.verify(accessToken, { secret: accessTokenSecret }),
-          ).toMatchObject({ sub: userId });
-        });
-      });
-
-      describe('[refresh_token]', () => {
-        test('a refresh-token is returned in a cookie', async () => {
-          const loginResponse = await request(application.getHttpServer())
-            .post('/login')
-            .send(userCredentials);
-
-          expect(
-            loginResponse
-              .get('Set-Cookie')
-              .filter((cookieString: string) =>
-                cookieString.startsWith(REFRESH_TOKEN),
-              ),
-          ).toHaveLength(1);
-        });
-
-        test('the returned refresh-token contains appropriate data', async () => {
-          const loginResponse = await request(application.getHttpServer())
-            .post('/login')
-            .send(userCredentials);
-
-          const refreshTokenCookieString = loginResponse
-            .get('Set-Cookie')
-            .filter((cookieString: string) =>
-              cookieString.startsWith(REFRESH_TOKEN),
-            )[0];
-
-          const refreshToken = signedCookie(
-            parse(refreshTokenCookieString)[REFRESH_TOKEN],
-            cookieSecret,
-          ) as string;
-
-          const refreshTokenSecret = configService.getOrThrow<
-            AuthenticationConfiguration['jwt']['refreshToken']['secret']
-          >('authentication.jwt.refreshToken.secret');
-
-          expect(
-            jwtService.verify(refreshToken, { secret: refreshTokenSecret }),
-          ).toMatchObject({ sub: userId });
-        });
-
-        test('a hash of the returned refresh-token is saved in the database', async () => {
-          const loginResponse = await request(application.getHttpServer())
-            .post('/login')
-            .send(userCredentials);
-
-          const refreshTokenCookieString = loginResponse
-            .get('Set-Cookie')
-            .filter((cookieString: string) =>
-              cookieString.startsWith(REFRESH_TOKEN),
-            )[0];
-
-          const refreshToken = signedCookie(
-            parse(refreshTokenCookieString)[REFRESH_TOKEN],
-            cookieSecret,
-          ) as string;
-
-          const hashedRefreshTokens = (await userModel.findById(userId).exec())
-            .hashedRefreshTokens;
-
-          expect(
-            (
-              await Promise.all(
-                hashedRefreshTokens.map(async ({ hash }) =>
-                  verify(hash, refreshToken),
-                ),
-              )
-            ).some(Boolean),
-          ).toBeTruthy();
-        });
-      });
+    it('returns a password-confirmation-token in a cookie', () => {
+      expect(
+        loginResponse
+          .get('Set-Cookie')
+          .filter((cookieString: string) =>
+            cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
+          ),
+      ).toHaveLength(1);
     });
   });
 
   describe('/POST logout', () => {
-    const userCredentials: Pick<User, 'username' | 'password'> = {
-      username: 'authentication-username-002',
-      password: 'authentication-password-002',
-    };
+    describe('[fails because]', () => {
+      it('cannot be accessed by an unauthentiated user', () => {
+        return request(application.getHttpServer())
+          .delete('/logout')
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
 
-    let userId: string;
-    let currentRefreshTokenCookieString: string;
+      it('cannot be called with an invalid scope', async () => {
+        const currentAccessTokenCookieString = loginResponse
+          .get('Set-Cookie')
+          .filter((cookieString: string) =>
+            cookieString.startsWith(ACCESS_TOKEN),
+          )[0];
 
-    beforeEach(async () => {
-      await request(application.getHttpServer())
-        .post('/register')
-        .send(userCredentials)
-        .expect(HttpStatus.CREATED);
-
-      const loginResponse = await request(application.getHttpServer())
-        .post('/login')
-        .send(userCredentials)
-        .expect(HttpStatus.OK);
-
-      currentRefreshTokenCookieString = loginResponse
-        .get('Set-Cookie')
-        .filter((cookieString: string) =>
-          cookieString.startsWith(REFRESH_TOKEN),
-        )[0];
-
-      userId = (
-        await userModel.findOne({ username: userCredentials.username }).exec()
-      )._id;
+        return request(application.getHttpServer())
+          .delete('/logout')
+          .set('Cookie', currentAccessTokenCookieString)
+          .send({ scope: 'invalid-scope' })
+          .expect(HttpStatus.BAD_REQUEST);
+      });
     });
 
-    afterEach(async () => {
-      await userModel.findByIdAndDelete(userId).exec();
-    });
+    describe('[on success]', () => {
+      let currentAccessTokenCookieString: string;
+      let currentRefreshTokenCookieString: string;
 
-    test("it returns the 'no-content' status code", () => {
-      return request(application.getHttpServer())
-        .delete('/logout')
-        .set('Cookie', currentRefreshTokenCookieString)
-        .expect(HttpStatus.NO_CONTENT);
-    });
+      beforeEach(async () => {
+        currentAccessTokenCookieString = loginResponse
+          .get('Set-Cookie')
+          .filter((cookieString: string) =>
+            cookieString.startsWith(ACCESS_TOKEN),
+          )[0];
 
-    test('it clears the access-token cookie', async () => {
-      const logoutResponse = await request(application.getHttpServer())
-        .delete('/logout')
-        .set('Cookie', currentRefreshTokenCookieString);
+        currentRefreshTokenCookieString = loginResponse
+          .get('Set-Cookie')
+          .filter((cookieString: string) =>
+            cookieString.startsWith(REFRESH_TOKEN),
+          )[0];
+      });
 
-      const accessTokenCookieString = logoutResponse
-        .get('Set-Cookie')
-        .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN))[0];
+      describe(`[scope = '${LogoutScope.CURRENT_SESSION}']`, () => {
+        let logoutResponse: Response;
 
-      const accessTokenExpiryDate = new Date(
-        parse(accessTokenCookieString)['Expires'],
-      );
+        beforeEach(async () => {
+          logoutResponse = await request(application.getHttpServer())
+            .delete('/logout')
+            .set('Cookie', [
+              currentAccessTokenCookieString,
+              currentRefreshTokenCookieString,
+            ])
+            .expect(HttpStatus.NO_CONTENT);
+        });
 
-      expect(new Date(accessTokenExpiryDate) < new Date()).toBeTruthy();
-    });
+        it(`returns the 'no-content' http-status code when scope is manually set to '${LogoutScope.CURRENT_SESSION}'`, () => {
+          return request(application.getHttpServer())
+            .delete('/logout')
+            .set('Cookie', [
+              currentAccessTokenCookieString,
+              currentRefreshTokenCookieString,
+            ])
+            .send({ scope: LogoutScope.CURRENT_SESSION })
+            .expect(HttpStatus.NO_CONTENT);
+        });
 
-    test('it clears the refresh-token cookie', async () => {
-      const logoutResponse = await request(application.getHttpServer())
-        .delete('/logout')
-        .set('Cookie', currentRefreshTokenCookieString);
+        it('clears the access-token cookie', () => {
+          const accessTokenCookieString = logoutResponse
+            .get('Set-Cookie')
+            .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN))[0];
 
-      const refreshTokenCookieString = logoutResponse
-        .get('Set-Cookie')
-        .filter((cookieString) => cookieString.startsWith(REFRESH_TOKEN))[0];
+          const accessTokenExpiryDate = parse(accessTokenCookieString)[
+            'Expires'
+          ];
 
-      const refreshTokenExpiryDate = new Date(
-        parse(refreshTokenCookieString)['Expires'],
-      );
+          expect(new Date(accessTokenExpiryDate) < new Date()).toBeTruthy();
+        });
 
-      expect(new Date(refreshTokenExpiryDate) < new Date()).toBeTruthy();
-    });
+        it('clears the refresh-token cookie', () => {
+          const refreshTokenCookieString = logoutResponse
+            .get('Set-Cookie')
+            .filter((cookieString) =>
+              cookieString.startsWith(REFRESH_TOKEN),
+            )[0];
 
-    test('it removes the hash of the current refresh token from the database', async () => {
-      await request(application.getHttpServer())
-        .delete('/logout')
-        .set('Cookie', currentRefreshTokenCookieString);
+          const refreshTokenExpiryDate = parse(refreshTokenCookieString)[
+            'Expires'
+          ];
 
-      expect(
-        (await userModel.findById(userId).exec()).hashedRefreshTokens,
-      ).toHaveLength(0);
+          expect(new Date(refreshTokenExpiryDate) < new Date()).toBeTruthy();
+        });
+
+        it('clears the password-confirmation-token cookie', () => {
+          const passwordConfirmationCookieString = logoutResponse
+            .get('Set-Cookie')
+            .filter((cookieString) =>
+              cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
+            )[0];
+
+          const passwordConfirmationCookieTokenExpiryDate = parse(
+            passwordConfirmationCookieString,
+          )['Expires'];
+
+          expect(
+            new Date(passwordConfirmationCookieTokenExpiryDate) < new Date(),
+          ).toBeTruthy();
+        });
+      });
+
+      describe(`[scope = '${LogoutScope.OTHER_SESSIONS}']`, () => {
+        it("returns the 'no-content' http-status code", () => {
+          return request(application.getHttpServer())
+            .delete('/logout')
+            .set('Cookie', [
+              currentAccessTokenCookieString,
+              currentRefreshTokenCookieString,
+            ])
+            .expect(HttpStatus.NO_CONTENT);
+        });
+      });
     });
   });
 });

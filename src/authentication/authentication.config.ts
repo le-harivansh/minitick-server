@@ -1,5 +1,6 @@
 import Joi from 'joi';
 
+import { msDurationPattern } from '../lib/helpers';
 import registerConfiguration from '../lib/register-configuration';
 
 export type AuthenticationConfiguration = {
@@ -12,14 +13,12 @@ export type AuthenticationConfiguration = {
       duration: string;
       secret: string;
     };
+    passwordConfirmationToken: {
+      duration: string;
+      secret: string;
+    };
   };
 };
-
-/**
- * The string pattern used by 'ms' to define durations.
- */
-const msDurationPattern =
-  /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i;
 
 export default registerConfiguration<AuthenticationConfiguration>(
   'authentication',
@@ -42,6 +41,16 @@ export default registerConfiguration<AuthenticationConfiguration>(
         },
         secret: {
           env: 'JWT_REFRESH_TOKEN_SECRET',
+          rules: Joi.string().min(32).required(),
+        },
+      },
+      passwordConfirmationToken: {
+        duration: {
+          env: 'JWT_PASSWORD_CONFIRMATION_TOKEN_DURATION',
+          rules: Joi.string().pattern(msDurationPattern).default('5 minutes'),
+        },
+        secret: {
+          env: 'JWT_PASSWORD_CONFIRMATION_TOKEN_SECRET',
           rules: Joi.string().min(32).required(),
         },
       },

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { User, UserSchema } from './schema/user.schema';
@@ -10,6 +11,7 @@ import { IsUniqueValidatorConstraint } from './validator/is-unique.validator';
 @Module({
   imports: [
     ConfigModule,
+    JwtModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
   ],
   providers: [UserService, IsUniqueValidatorConstraint],

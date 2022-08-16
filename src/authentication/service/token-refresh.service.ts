@@ -6,10 +6,14 @@ import ms from 'ms';
 
 import { RequestUser } from '../../user/schema/user.schema';
 import { AuthenticationConfiguration } from '../authentication.config';
-import { ACCESS_TOKEN, REFRESH_TOKEN } from '../constants';
+import {
+  ACCESS_TOKEN,
+  PASSWORD_CONFIRMATION_TOKEN,
+  REFRESH_TOKEN,
+} from '../constants';
 
 @Injectable()
-export class TokenService {
+export class TokenRefreshService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -21,7 +25,7 @@ export class TokenService {
   ) {
     const accessToken = await this.generateAccessToken(user);
 
-    TokenService.attachTokenCookieToResponse(
+    TokenRefreshService.attachTokenCookieToResponse(
       ACCESS_TOKEN,
       accessToken,
       ms(
@@ -39,7 +43,7 @@ export class TokenService {
   ) {
     const refreshToken = await this.generateRefreshToken(user);
 
-    TokenService.attachTokenCookieToResponse(
+    TokenRefreshService.attachTokenCookieToResponse(
       REFRESH_TOKEN,
       refreshToken,
       ms(
@@ -53,15 +57,43 @@ export class TokenService {
     return refreshToken;
   }
 
+  async attachPasswordConfirmationTokenCookieToResponse(
+    user: RequestUser,
+    response: ExpressResponse,
+  ) {
+    const passwordConfirmationToken =
+      await this.generatePasswordConfirmationToken(user);
+
+    TokenRefreshService.attachTokenCookieToResponse(
+      PASSWORD_CONFIRMATION_TOKEN,
+      passwordConfirmationToken,
+      ms(
+        this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['passwordConfirmationToken']['duration']
+        >('authentication.jwt.passwordConfirmationToken.duration'),
+      ),
+      response,
+    );
+  }
+
   static clearAccessTokenCookieFromResponse(response: ExpressResponse) {
-    TokenService.clearTokenCookieFromResponse(ACCESS_TOKEN, response);
+    TokenRefreshService.clearTokenCookieFromResponse(ACCESS_TOKEN, response);
   }
 
   static clearRefreshTokenCookieFromResponse(response: ExpressResponse) {
-    TokenService.clearTokenCookieFromResponse(REFRESH_TOKEN, response);
+    TokenRefreshService.clearTokenCookieFromResponse(REFRESH_TOKEN, response);
   }
 
-  async generateAccessToken({ id: userId }: RequestUser) {
+  static clearPasswordConfirmationTokenCookieFromResponse(
+    response: ExpressResponse,
+  ) {
+    TokenRefreshService.clearTokenCookieFromResponse(
+      PASSWORD_CONFIRMATION_TOKEN,
+      response,
+    );
+  }
+
+  private async generateAccessToken({ id: userId }: RequestUser) {
     return this.jwtService.signAsync(
       { sub: userId },
       {
@@ -75,7 +107,7 @@ export class TokenService {
     );
   }
 
-  async generateRefreshToken({ id: userId }: RequestUser) {
+  private async generateRefreshToken({ id: userId }: RequestUser) {
     return this.jwtService.signAsync(
       { sub: userId },
       {
@@ -89,7 +121,21 @@ export class TokenService {
     );
   }
 
-  static attachTokenCookieToResponse(
+  private async generatePasswordConfirmationToken({ id: userId }: RequestUser) {
+    return this.jwtService.signAsync(
+      { sub: userId },
+      {
+        secret: this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['passwordConfirmationToken']['secret']
+        >('authentication.jwt.passwordConfirmationToken.secret'),
+        expiresIn: this.configService.getOrThrow<
+          AuthenticationConfiguration['jwt']['passwordConfirmationToken']['duration']
+        >('authentication.jwt.passwordConfirmationToken.duration'),
+      },
+    );
+  }
+
+  private static attachTokenCookieToResponse(
     cookieName: string,
     cookieValue: unknown,
     maxAge: number,
@@ -104,7 +150,7 @@ export class TokenService {
     });
   }
 
-  static clearTokenCookieFromResponse(
+  private static clearTokenCookieFromResponse(
     cookieName: string,
     response: ExpressResponse,
   ) {

@@ -17,23 +17,21 @@ describe(RefreshTokenStrategy.name, () => {
     const hashedTokens: string[] = [];
 
     beforeAll(async () => {
-      for await (const plainToken of plainTokens) {
+      for (const plainToken of plainTokens) {
         hashedTokens.push(await hash(plainToken, { type: argon2id }));
       }
     });
 
-    describe('when called', () => {
-      test("it returns true when a token's hash is present in the provided hash-array", async () => {
-        expect(
-          RefreshTokenStrategy['tokenIsValid'](plainTokens[1], hashedTokens),
-        ).resolves.toBeTruthy();
-      });
+    it("returns true when a token's hash is present in the provided hash-array", async () => {
+      expect(
+        RefreshTokenStrategy['tokenIsValid'](plainTokens[1], hashedTokens),
+      ).resolves.toBe(true);
+    });
 
-      test("it returns false when a token's hash is absent from the provided hash-array", async () => {
-        expect(
-          RefreshTokenStrategy['tokenIsValid']('invalid token', hashedTokens),
-        ).resolves.toBeFalsy();
-      });
+    test("it returns false when a token's hash is absent from the provided hash-array", async () => {
+      expect(
+        RefreshTokenStrategy['tokenIsValid']('invalid token', hashedTokens),
+      ).resolves.toBe(false);
     });
   });
 
@@ -51,8 +49,11 @@ describe(RefreshTokenStrategy.name, () => {
       hashedRefreshTokens,
     };
 
+    const createRequest = (token: string) =>
+      ({ signedCookies: { [REFRESH_TOKEN]: token } } as ExpressRequest);
+
     beforeAll(async () => {
-      for await (const plainRefreshToken of plainRefreshTokens) {
+      for (const plainRefreshToken of plainRefreshTokens) {
         hashedRefreshTokens.push({
           hash: await hash(plainRefreshToken, { type: argon2id }),
           expiresOn: new Date(),
@@ -80,33 +81,28 @@ describe(RefreshTokenStrategy.name, () => {
       refreshTokenStrategy = module.get(RefreshTokenStrategy);
     });
 
-    describe('when called', () => {
-      const createRequest = (token: string) =>
-        ({ signedCookies: { [REFRESH_TOKEN]: token } } as ExpressRequest);
+    it("returns the user's data when a valid refresh-token is present in the request cookies", () => {
+      expect(
+        refreshTokenStrategy.validate(createRequest(plainRefreshTokens[1]), {
+          sub: user._id,
+        }),
+      ).resolves.toMatchObject({ id: user._id, username: user.username });
+    });
 
-      test("it returns the user's data when a valid refresh-token is present in the request cookies", () => {
-        expect(
-          refreshTokenStrategy.validate(createRequest(plainRefreshTokens[1]), {
-            sub: user._id,
-          }),
-        ).resolves.toMatchObject({ id: user._id, username: user.username });
-      });
+    it("throws an UnauthorizedException if the provided user's id is invalid", () => {
+      expect(
+        refreshTokenStrategy.validate(createRequest(plainRefreshTokens[0]), {
+          sub: null,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
 
-      test("it throws an UnauthorizedException if the provided user's id is invalid", () => {
-        expect(
-          refreshTokenStrategy.validate(createRequest(plainRefreshTokens[0]), {
-            sub: null,
-          }),
-        ).rejects.toThrow(UnauthorizedException);
-      });
-
-      test('it throws an UnauthorizedException if the provided refresh-token is invalid', () => {
-        expect(
-          refreshTokenStrategy.validate(createRequest('invalid-token'), {
-            sub: user._id,
-          }),
-        ).rejects.toThrow(UnauthorizedException);
-      });
+    it('throws an UnauthorizedException if the provided refresh-token is invalid', () => {
+      expect(
+        refreshTokenStrategy.validate(createRequest('invalid-token'), {
+          sub: user._id,
+        }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

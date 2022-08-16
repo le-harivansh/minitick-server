@@ -9,7 +9,7 @@ export class HashedRefreshToken {
    * This field is ONLY used to check whether a refresh-token needs to be
    * pruned from the database.
    *
-   * DO NOT check the validity of the token using this field, since expiry date
+   * DO NOT check the validity of the token using this field since expiry date
    * checks are automatically done by passport-jwt.
    */
   @Prop({ type: Date, required: true })
