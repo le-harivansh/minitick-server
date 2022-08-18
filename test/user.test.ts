@@ -62,7 +62,7 @@ describe(UserController.name, () => {
     loginResponse = await request(application.getHttpServer())
       .post('/login')
       .send(userCredentials)
-      .expect(HttpStatus.OK);
+      .expect(HttpStatus.NO_CONTENT);
 
     accessTokenCookieString = loginResponse
       .get('Set-Cookie')
@@ -81,6 +81,33 @@ describe(UserController.name, () => {
 
   afterAll(async () => {
     await application.close();
+  });
+
+  describe('/GET user', () => {
+    describe('[fails because]', () => {
+      it('cannot be accessed by an unauthenticated user', () => {
+        return request(application.getHttpServer())
+          .get('/user')
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
+    });
+
+    describe('[on success]', () => {
+      it("returns the user's data", async () => {
+        const userQueryResponse = await request(application.getHttpServer())
+          .get('/user')
+          .set('Cookie', accessTokenCookieString);
+
+        expect(Object.keys(userQueryResponse.body)).toMatchObject([
+          'id',
+          'username',
+        ]);
+
+        expect(userQueryResponse.body).toMatchObject({
+          username: userCredentials.username,
+        });
+      });
+    });
   });
 
   describe('/PATCH user', () => {
@@ -156,8 +183,11 @@ describe(UserController.name, () => {
       });
 
       it("returns the updated user's data", () => {
+        expect(Object.keys(userUpdateResponse.body)).toMatchObject([
+          'id',
+          'username',
+        ]);
         expect(userUpdateResponse.body).toMatchObject({
-          id: loginResponse.body['id'],
           username: updatedUserCredentials.username,
         });
       });

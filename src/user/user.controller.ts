@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Patch,
@@ -23,6 +24,12 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get()
+  @UseGuards(RequiresAccessToken)
+  get(@User() user: RequestUser) {
+    return user;
+  }
 
   @Patch()
   @UseGuards(RequiresAccessToken, RequiresPasswordConfirmationToken)

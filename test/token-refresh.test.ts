@@ -58,7 +58,7 @@ describe(TokenRefreshController.name, () => {
     const loginResponse = await request(application.getHttpServer())
       .post('/login')
       .send(userCredentials)
-      .expect(HttpStatus.OK);
+      .expect(HttpStatus.NO_CONTENT);
 
     currentAccessTokenCookieString = loginResponse
       .get('Set-Cookie')

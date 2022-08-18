@@ -59,7 +59,7 @@ describe(AuthenticationController.name, () => {
     loginResponse = await request(application.getHttpServer())
       .post('/login')
       .send(userCredentials)
-      .expect(HttpStatus.OK);
+      .expect(HttpStatus.NO_CONTENT);
   });
 
   afterEach(async () => {
@@ -71,13 +71,6 @@ describe(AuthenticationController.name, () => {
   });
 
   describe('/POST login', () => {
-    it("returns the user's data", () => {
-      expect(Object.keys(loginResponse.body)).toContain('id');
-      expect(loginResponse.body).toMatchObject({
-        username: userCredentials.username,
-      });
-    });
-
     it('returns an access-token in a cookie', () => {
       expect(
         loginResponse

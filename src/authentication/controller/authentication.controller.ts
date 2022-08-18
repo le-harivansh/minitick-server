@@ -34,7 +34,7 @@ export class AuthenticationController {
 
   @Post('login')
   @UseGuards(RequiresCredentials)
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
   async login(
     @User() user: RequestUser,
     @Response({ passthrough: true }) response: ExpressResponse,
@@ -53,8 +53,6 @@ export class AuthenticationController {
       user,
       response,
     );
-
-    return user;
   }
 
   @Delete('logout')
