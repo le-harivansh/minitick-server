@@ -88,7 +88,7 @@ describe(RegistrationController.name, () => {
         // password: MinLength(8)
         { username: 'registration-username-005', password: 'r-p-6' },
 
-        // username: IsUnique
+        // username: UsernameIsUnique
         registerUserDto,
       ])(
         'payload is invalid [$username, $password]',

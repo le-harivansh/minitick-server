@@ -1,6 +1,6 @@
 import { IsString, MinLength } from 'class-validator';
 
-import IsUnique from '../../user/validator/is-unique.validator';
+import UsernameIsUnique from '../../user/validator/username-is-unique.validator';
 
 export class RegisterUserDto {
   @IsString({ message: 'The username should be a string.' })
@@ -8,7 +8,7 @@ export class RegisterUserDto {
     message: ({ constraints }) =>
       `The username should be at least ${constraints} characters long.`,
   })
-  @IsUnique()
+  @UsernameIsUnique()
   readonly username: string;
 
   @MinLength(8, {

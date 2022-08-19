@@ -11,7 +11,7 @@ import { UserService } from '../user.service';
 
 @Injectable()
 @ValidatorConstraint({ async: true })
-export class IsUniqueValidatorConstraint
+export class UsernameIsUniqueValidatorConstraint
   implements ValidatorConstraintInterface
 {
   constructor(private readonly userService: UserService) {}
@@ -25,13 +25,15 @@ export class IsUniqueValidatorConstraint
   }
 }
 
-export default function IsUnique(validationOptions?: ValidationOptions) {
+export default function UsernameIsUnique(
+  validationOptions?: ValidationOptions,
+) {
   return (object: unknown, propertyName: string) =>
     registerDecorator({
       target: object.constructor,
       propertyName,
       async: true,
       options: validationOptions,
-      validator: IsUniqueValidatorConstraint,
+      validator: UsernameIsUniqueValidatorConstraint,
     });
 }

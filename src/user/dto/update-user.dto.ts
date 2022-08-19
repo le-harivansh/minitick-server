@@ -6,13 +6,13 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-import IsUnique from '../validator/is-unique.validator';
+import UsernameIsUnique from '../validator/username-is-unique.validator';
 
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(4)
-  @IsUnique()
+  @UsernameIsUnique()
   readonly username?: string;
 
   @IsOptional()
