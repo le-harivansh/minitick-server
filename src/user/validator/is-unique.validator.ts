@@ -20,8 +20,8 @@ export class IsUniqueValidatorConstraint
     return !(await this.userService.findByUsername(username));
   }
 
-  defaultMessage?(validationArguments?: ValidationArguments): string {
-    return `username '${validationArguments.value}' already exists.`;
+  defaultMessage({ property, value }: ValidationArguments): string {
+    return `The ${property} '${value}' already exists.`;
   }
 }
 
