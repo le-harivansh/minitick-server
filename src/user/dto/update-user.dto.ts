@@ -10,13 +10,19 @@ import UsernameIsUnique from '../validator/username-is-unique.validator';
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsString()
-  @MinLength(4)
+  @IsString({ message: 'The username should be a string.' })
+  @MinLength(4, {
+    message: ({ constraints }) =>
+      `The username should be at least ${constraints} characters long.`,
+  })
   @UsernameIsUnique()
   readonly username?: string;
 
   @IsOptional()
-  @MinLength(8)
+  @MinLength(8, {
+    message: ({ constraints }) =>
+      `The password should be at least ${constraints} characters long.`,
+  })
   readonly password?: string;
 
   /**
@@ -28,7 +34,7 @@ export class UpdateUserDto {
     ({ username, password }: UpdateUserDto) => !(username || password),
   )
   @IsNotEmpty({
-    message: 'The provided payload should not be empty',
+    message: 'Provide either your username or your password to be updated.',
   })
   readonly _?: boolean;
 }
