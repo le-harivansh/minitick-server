@@ -23,7 +23,7 @@ export class LocalStrategy extends PassportStrategy(Strategy, LOCAL_GUARD) {
         password,
       ))
     ) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('The provided credentials are invalid.');
     }
 
     const { _id: id } = await this.userService.findByUsername(username);
