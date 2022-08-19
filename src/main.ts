@@ -14,6 +14,7 @@ async function bootstrap() {
     origin: configService.getOrThrow<
       ApplicationConfiguration['cors']['origin']
     >('application.cors.origin'),
+    credentials: true,
   });
 
   useContainer(application.select(ApplicationModule), {
