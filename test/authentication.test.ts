@@ -59,7 +59,7 @@ describe(AuthenticationController.name, () => {
     loginResponse = await request(application.getHttpServer())
       .post('/login')
       .send(userCredentials)
-      .expect(HttpStatus.NO_CONTENT);
+      .expect(HttpStatus.OK);
   });
 
   afterEach(async () => {
@@ -99,6 +99,22 @@ describe(AuthenticationController.name, () => {
             cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
           ),
       ).toHaveLength(1);
+    });
+
+    it('returns the expiry times of the returned: access-token, refresh-token & password-confirmation-token', () => {
+      expect(loginResponse.body).toMatchObject(
+        expect.objectContaining({
+          accessToken: expect.objectContaining({
+            expiresAt: expect.any(Number),
+          }),
+          refreshToken: expect.objectContaining({
+            expiresAt: expect.any(Number),
+          }),
+          passwordConfirmationToken: expect.objectContaining({
+            expiresAt: expect.any(Number),
+          }),
+        }),
+      );
     });
   });
 

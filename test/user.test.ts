@@ -62,7 +62,7 @@ describe(UserController.name, () => {
     loginResponse = await request(application.getHttpServer())
       .post('/login')
       .send(userCredentials)
-      .expect(HttpStatus.NO_CONTENT);
+      .expect(HttpStatus.OK);
 
     accessTokenCookieString = loginResponse
       .get('Set-Cookie')
@@ -98,14 +98,12 @@ describe(UserController.name, () => {
           .get('/user')
           .set('Cookie', accessTokenCookieString);
 
-        expect(Object.keys(userQueryResponse.body)).toMatchObject([
-          'id',
-          'username',
-        ]);
-
-        expect(userQueryResponse.body).toMatchObject({
-          username: userCredentials.username,
-        });
+        expect(userQueryResponse.body).toMatchObject(
+          expect.objectContaining({
+            id: expect.any(String),
+            username: userCredentials.username,
+          }),
+        );
       });
     });
   });
@@ -183,13 +181,12 @@ describe(UserController.name, () => {
       });
 
       it("returns the updated user's data", () => {
-        expect(Object.keys(userUpdateResponse.body)).toMatchObject([
-          'id',
-          'username',
-        ]);
-        expect(userUpdateResponse.body).toMatchObject({
-          username: updatedUserCredentials.username,
-        });
+        expect(userUpdateResponse.body).toMatchObject(
+          expect.objectContaining({
+            id: expect.any(String),
+            username: updatedUserCredentials.username,
+          }),
+        );
       });
     });
   });

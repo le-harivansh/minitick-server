@@ -32,34 +32,36 @@ export class TokenRefreshController {
 
   @Get('access-token')
   @UseGuards(RequiresRefreshToken)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async regenerateAccessToken(
     @User() user: RequestUser,
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {
-    await this.tokenService.attachAccessTokenCookieToResponse(user, response);
+    return this.tokenService.attachAccessTokenCookieToResponse(user, response);
   }
 
   @Get('refresh-token')
   @UseGuards(RequiresRefreshToken)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async regenerateRefreshToken(
     @User() user: RequestUser,
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {
-    const refreshToken =
+    const { token: refreshToken, expiresAt } =
       await this.tokenService.attachRefreshTokenCookieToResponse(
         user,
         response,
       );
 
     await this.userService.saveHashedRefreshToken(user.id, refreshToken);
+
+    return { expiresAt };
   }
 
   @Post('password-confirmation-token')
   @UseGuards(RequiresAccessToken)
   @UsePipes(ValidationPipe)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async regeneratePasswordConfirmationToken(
     @Body() { password }: RefreshPasswordConfirmationTokenDto,
     @User() user: RequestUser,
@@ -74,7 +76,7 @@ export class TokenRefreshController {
       throw new UnauthorizedException();
     }
 
-    await this.tokenService.attachPasswordConfirmationTokenCookieToResponse(
+    return this.tokenService.attachPasswordConfirmationTokenCookieToResponse(
       user,
       response,
     );

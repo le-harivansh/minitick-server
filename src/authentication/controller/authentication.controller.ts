@@ -34,14 +34,15 @@ export class AuthenticationController {
 
   @Post('login')
   @UseGuards(RequiresCredentials)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async login(
     @User() user: RequestUser,
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {
-    await this.tokenService.attachAccessTokenCookieToResponse(user, response);
+    const { expiresAt: accessTokenExpiresAt } =
+      await this.tokenService.attachAccessTokenCookieToResponse(user, response);
 
-    const refreshToken =
+    const { token: refreshToken, expiresAt: refreshTokenExpiresAt } =
       await this.tokenService.attachRefreshTokenCookieToResponse(
         user,
         response,
@@ -49,10 +50,19 @@ export class AuthenticationController {
 
     await this.userService.saveHashedRefreshToken(user.id, refreshToken);
 
-    await this.tokenService.attachPasswordConfirmationTokenCookieToResponse(
-      user,
-      response,
-    );
+    const { expiresAt: passwordConfirmationTokenExpiresAt } =
+      await this.tokenService.attachPasswordConfirmationTokenCookieToResponse(
+        user,
+        response,
+      );
+
+    return {
+      accessToken: { expiresAt: accessTokenExpiresAt },
+      refreshToken: { expiresAt: refreshTokenExpiresAt },
+      passwordConfirmationToken: {
+        expiresAt: passwordConfirmationTokenExpiresAt,
+      },
+    };
   }
 
   @Delete('logout')

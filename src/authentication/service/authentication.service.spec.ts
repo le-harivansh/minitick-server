@@ -52,7 +52,16 @@ describe(AuthenticationService.name, () => {
       ).resolves.toBe(true);
     });
 
-    it('returns false if incorrect user-credentials are passed', async () => {
+    it('returns false if an incorrect username is passed', async () => {
+      expect(
+        authenticationService.credentialsAreValid(
+          'invalid-username',
+          userPassword,
+        ),
+      ).resolves.toBe(false);
+    });
+
+    it('returns false if an incorrect password is passed', async () => {
       expect(
         authenticationService.credentialsAreValid(
           requestUser.username,

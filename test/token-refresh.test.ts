@@ -58,7 +58,7 @@ describe(TokenRefreshController.name, () => {
     const loginResponse = await request(application.getHttpServer())
       .post('/login')
       .send(userCredentials)
-      .expect(HttpStatus.NO_CONTENT);
+      .expect(HttpStatus.OK);
 
     currentAccessTokenCookieString = loginResponse
       .get('Set-Cookie')
@@ -97,7 +97,7 @@ describe(TokenRefreshController.name, () => {
         refreshAccessTokenResponse = await request(application.getHttpServer())
           .get('/refresh/access-token')
           .set('Cookie', currentRefreshTokenCookieString)
-          .expect(HttpStatus.NO_CONTENT);
+          .expect(HttpStatus.OK);
       });
 
       it('attaches an access-token cookie to the response', () => {
@@ -108,6 +108,14 @@ describe(TokenRefreshController.name, () => {
               cookieString.startsWith(ACCESS_TOKEN),
             ),
         ).toHaveLength(1);
+      });
+
+      it('returns the access-token expiry timestamp', () => {
+        expect(refreshAccessTokenResponse.body).toMatchObject(
+          expect.objectContaining({
+            expiresAt: expect.any(Number),
+          }),
+        );
       });
     });
   });
@@ -128,7 +136,7 @@ describe(TokenRefreshController.name, () => {
         refreshRefreshTokenResponse = await request(application.getHttpServer())
           .get('/refresh/refresh-token')
           .set('Cookie', currentRefreshTokenCookieString)
-          .expect(HttpStatus.NO_CONTENT);
+          .expect(HttpStatus.OK);
       });
 
       it('attaches a refresh-token cookie to the response', () => {
@@ -139,6 +147,14 @@ describe(TokenRefreshController.name, () => {
               cookieString.startsWith(REFRESH_TOKEN),
             ),
         ).toHaveLength(1);
+      });
+
+      it('returns the refresh-token expiry timestamp', () => {
+        expect(refreshRefreshTokenResponse.body).toMatchObject(
+          expect.objectContaining({
+            expiresAt: expect.any(Number),
+          }),
+        );
       });
     });
   });
@@ -158,35 +174,30 @@ describe(TokenRefreshController.name, () => {
           .set('Cookie', currentAccessTokenCookieString)
           .expect(HttpStatus.BAD_REQUEST);
       });
+
+      it("returns the 'unauthorized' http status-code if an incorrect password (for the currently authenticated user) is provided", () => {
+        return request(application.getHttpServer())
+          .post('/refresh/password-confirmation-token')
+          .set('Cookie', currentAccessTokenCookieString)
+          .send({ password: 'incorrect-password' })
+          .expect(HttpStatus.UNAUTHORIZED);
+      });
     });
 
     describe('[on success]', () => {
-      it("returns the 'unauthorized' http status-code if an incorrect password (for the currently authenticated user) is provided", () => {
-        const password = 'incorrect-password';
+      let refreshPasswordConfirmationTokenResponse: Response;
 
-        return request(application.getHttpServer())
-          .post('/refresh/password-confirmation-token')
-          .set('Cookie', currentAccessTokenCookieString)
-          .send({ password })
-          .expect(HttpStatus.UNAUTHORIZED);
-      });
-
-      it("returns the 'no-content' http status-code if the correct credentials are provided", () => {
-        return request(application.getHttpServer())
-          .post('/refresh/password-confirmation-token')
-          .set('Cookie', currentAccessTokenCookieString)
-          .send({ password: userCredentials.password })
-          .expect(HttpStatus.NO_CONTENT);
-      });
-
-      it('attaches a password-confirmation-token cookie to the response', async () => {
-        const refreshPasswordConfirmationTokenResponse = await request(
+      beforeEach(async () => {
+        refreshPasswordConfirmationTokenResponse = await request(
           application.getHttpServer(),
         )
           .post('/refresh/password-confirmation-token')
           .set('Cookie', currentAccessTokenCookieString)
-          .send({ password: userCredentials.password });
+          .send({ password: userCredentials.password })
+          .expect(HttpStatus.OK);
+      });
 
+      it('attaches a password-confirmation-token cookie to the response', async () => {
         expect(
           refreshPasswordConfirmationTokenResponse
             .get('Set-Cookie')
@@ -194,6 +205,14 @@ describe(TokenRefreshController.name, () => {
               cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
             ),
         ).toHaveLength(1);
+      });
+
+      it('returns the password-confirmation-token expiry timestamp', () => {
+        expect(refreshPasswordConfirmationTokenResponse.body).toMatchObject(
+          expect.objectContaining({
+            expiresAt: expect.any(Number),
+          }),
+        );
       });
     });
   });

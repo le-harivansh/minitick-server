@@ -23,57 +23,57 @@ export class TokenRefreshService {
     user: RequestUser,
     response: ExpressResponse,
   ) {
-    const accessToken = await this.generateAccessToken(user);
+    const { token, duration } = await this.generateAccessToken(user);
 
     TokenRefreshService.attachTokenCookieToResponse(
       ACCESS_TOKEN,
-      accessToken,
-      ms(
-        this.configService.getOrThrow<
-          AuthenticationConfiguration['jwt']['accessToken']['duration']
-        >('authentication.jwt.accessToken.duration'),
-      ),
+      token,
+      duration,
       response,
     );
+
+    return {
+      expiresAt: Date.now() + duration,
+    };
   }
 
   async attachRefreshTokenCookieToResponse(
     user: RequestUser,
     response: ExpressResponse,
   ) {
-    const refreshToken = await this.generateRefreshToken(user);
+    const { token, duration } = await this.generateRefreshToken(user);
 
     TokenRefreshService.attachTokenCookieToResponse(
       REFRESH_TOKEN,
-      refreshToken,
-      ms(
-        this.configService.getOrThrow<
-          AuthenticationConfiguration['jwt']['refreshToken']['duration']
-        >('authentication.jwt.refreshToken.duration'),
-      ),
+      token,
+      duration,
       response,
     );
 
-    return refreshToken;
+    return {
+      token,
+      expiresAt: Date.now() + duration,
+    };
   }
 
   async attachPasswordConfirmationTokenCookieToResponse(
     user: RequestUser,
     response: ExpressResponse,
   ) {
-    const passwordConfirmationToken =
-      await this.generatePasswordConfirmationToken(user);
+    const { token, duration } = await this.generatePasswordConfirmationToken(
+      user,
+    );
 
     TokenRefreshService.attachTokenCookieToResponse(
       PASSWORD_CONFIRMATION_TOKEN,
-      passwordConfirmationToken,
-      ms(
-        this.configService.getOrThrow<
-          AuthenticationConfiguration['jwt']['passwordConfirmationToken']['duration']
-        >('authentication.jwt.passwordConfirmationToken.duration'),
-      ),
+      token,
+      duration,
       response,
     );
+
+    return {
+      expiresAt: Date.now() + duration,
+    };
   }
 
   static clearAccessTokenCookieFromResponse(response: ExpressResponse) {
@@ -94,45 +94,66 @@ export class TokenRefreshService {
   }
 
   private async generateAccessToken({ id: userId }: RequestUser) {
-    return this.jwtService.signAsync(
+    const accessTokenDuration = this.configService.getOrThrow<
+      AuthenticationConfiguration['jwt']['accessToken']['duration']
+    >('authentication.jwt.accessToken.duration');
+
+    const accessToken = await this.jwtService.signAsync(
       { sub: userId },
       {
         secret: this.configService.getOrThrow<
           AuthenticationConfiguration['jwt']['accessToken']['secret']
         >('authentication.jwt.accessToken.secret'),
-        expiresIn: this.configService.getOrThrow<
-          AuthenticationConfiguration['jwt']['accessToken']['duration']
-        >('authentication.jwt.accessToken.duration'),
+        expiresIn: accessTokenDuration,
       },
     );
+
+    return {
+      token: accessToken,
+      duration: ms(accessTokenDuration),
+    };
   }
 
   private async generateRefreshToken({ id: userId }: RequestUser) {
-    return this.jwtService.signAsync(
+    const refreshTokenDuration = this.configService.getOrThrow<
+      AuthenticationConfiguration['jwt']['refreshToken']['duration']
+    >('authentication.jwt.refreshToken.duration');
+
+    const refreshToken = await this.jwtService.signAsync(
       { sub: userId },
       {
         secret: this.configService.getOrThrow<
           AuthenticationConfiguration['jwt']['refreshToken']['secret']
         >('authentication.jwt.refreshToken.secret'),
-        expiresIn: this.configService.getOrThrow<
-          AuthenticationConfiguration['jwt']['refreshToken']['duration']
-        >('authentication.jwt.refreshToken.duration'),
+        expiresIn: refreshTokenDuration,
       },
     );
+
+    return {
+      token: refreshToken,
+      duration: ms(refreshTokenDuration),
+    };
   }
 
   private async generatePasswordConfirmationToken({ id: userId }: RequestUser) {
-    return this.jwtService.signAsync(
+    const passwordConfirmationTokenDuration = this.configService.getOrThrow<
+      AuthenticationConfiguration['jwt']['passwordConfirmationToken']['duration']
+    >('authentication.jwt.passwordConfirmationToken.duration');
+
+    const passwordConfirmationToken = await this.jwtService.signAsync(
       { sub: userId },
       {
         secret: this.configService.getOrThrow<
           AuthenticationConfiguration['jwt']['passwordConfirmationToken']['secret']
         >('authentication.jwt.passwordConfirmationToken.secret'),
-        expiresIn: this.configService.getOrThrow<
-          AuthenticationConfiguration['jwt']['passwordConfirmationToken']['duration']
-        >('authentication.jwt.passwordConfirmationToken.duration'),
+        expiresIn: passwordConfirmationTokenDuration,
       },
     );
+
+    return {
+      token: passwordConfirmationToken,
+      duration: ms(passwordConfirmationTokenDuration),
+    };
   }
 
   private static attachTokenCookieToResponse(

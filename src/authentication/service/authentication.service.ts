@@ -10,6 +10,6 @@ export class AuthenticationService {
   async credentialsAreValid(username: string, password: string) {
     const retrievedUser = await this.userService.findByUsername(username);
 
-    return retrievedUser && (await verify(retrievedUser.password, password));
+    return !!retrievedUser && (await verify(retrievedUser.password, password));
   }
 }
