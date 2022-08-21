@@ -1,11 +1,11 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Post,
-  UnauthorizedException,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -73,7 +73,7 @@ export class TokenRefreshController {
         password,
       ))
     ) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException();
     }
 
     return this.tokenService.attachPasswordConfirmationTokenCookieToResponse(

@@ -175,12 +175,12 @@ describe(TokenRefreshController.name, () => {
           .expect(HttpStatus.BAD_REQUEST);
       });
 
-      it("returns the 'unauthorized' http status-code if an incorrect password (for the currently authenticated user) is provided", () => {
+      it("returns the 'forbidden' http status-code if an incorrect password - for the currently authenticated user - is provided", () => {
         return request(application.getHttpServer())
           .post('/refresh/password-confirmation-token')
           .set('Cookie', currentAccessTokenCookieString)
           .send({ password: 'incorrect-password' })
-          .expect(HttpStatus.UNAUTHORIZED);
+          .expect(HttpStatus.FORBIDDEN);
       });
     });
 
