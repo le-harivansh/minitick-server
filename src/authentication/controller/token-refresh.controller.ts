@@ -16,7 +16,7 @@ import { Response as ExpressResponse } from 'express';
 import { User } from '../../user/decorator/user.decorator';
 import { RequestUser } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
-import { RefreshPasswordConfirmationTokenDto } from '../dto/refresh-password-confirmation-token.dto';
+import { RegeneratePasswordConfirmationTokenDto } from '../dto/regenerate-password-confirmation-token.dto';
 import { RequiresAccessToken } from '../guard/access-token.guard';
 import { RequiresRefreshToken } from '../guard/refresh-token.guard';
 import { AuthenticationService } from '../service/authentication.service';
@@ -63,7 +63,7 @@ export class TokenRefreshController {
   @UsePipes(ValidationPipe)
   @HttpCode(HttpStatus.OK)
   async regeneratePasswordConfirmationToken(
-    @Body() { password }: RefreshPasswordConfirmationTokenDto,
+    @Body() { password }: RegeneratePasswordConfirmationTokenDto,
     @User() user: RequestUser,
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {

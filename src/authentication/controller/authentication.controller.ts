@@ -78,7 +78,7 @@ export class AuthenticationController {
     const refreshToken: string = request.signedCookies[REFRESH_TOKEN];
 
     if (scope === LogoutScope.OTHER_SESSIONS) {
-      return await this.userService.removeAllOtherHashedRefreshTokens(
+      return this.userService.removeAllOtherHashedRefreshTokens(
         userId,
         refreshToken,
       );
