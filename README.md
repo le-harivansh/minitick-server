@@ -1,3 +1,3 @@
-# Clax Server
+# Minitick Server
 
-The server of the clax chat application.
+The server of the minitick chat application.

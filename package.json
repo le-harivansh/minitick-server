@@ -1,10 +1,10 @@
 {
-  "name": "clax-server",
+  "name": "minitick-server",
   "version": "0.0.1",
-  "description": "The server of the clax chat application.",
+  "description": "The server of the minitick application.",
   "keywords": [
-    "clax",
-    "chat"
+    "minitick",
+    "task-management"
   ],
   "author": {
     "name": "Harivansh",
@@ -14,18 +14,18 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "lint": "eslint --cache --fix .",
+    "format": "prettier --write .",
     "prebuild": "rimraf dist",
     "build": "nest build",
-    "format": "prettier --write .",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint --cache --fix .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:unit": "jest",
+    "test:unit:watch": "jest --watch",
+    "test:unit:cov": "jest --coverage",
+    "test:unit:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest.config.ts",
     "postinstall": "husky install"
   },

@@ -1,13 +1,13 @@
+# environment
+.env
+.env.test
+
 # compiled output
 /dist
 /node_modules
 
 # eslint
 .eslintcache
-
-# environment
-.env
-.env.test
 
 # yarn
 .yarn/*
