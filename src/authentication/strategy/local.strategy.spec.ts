@@ -46,7 +46,7 @@ describe(LocalStrategy.name, () => {
     it("returns the corresponding user's data when the correct credentials are provided", async () => {
       expect(
         localStrategy.validate(userData.username, userData.password),
-      ).resolves.toMatchObject({
+      ).resolves.toStrictEqual({
         id: userData.id,
         username: userData.username,
       });

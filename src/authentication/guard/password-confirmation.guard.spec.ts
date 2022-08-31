@@ -74,7 +74,7 @@ describe(RequiresPasswordConfirmationToken.name, () => {
       switchToHttp: () => ({ getRequest: () => ({ signedCookies }) }),
     } as unknown as ExecutionContext);
 
-  let passwordConfirmationGuard;
+  let passwordConfirmationGuard: RequiresPasswordConfirmationToken;
 
   beforeAll(() => {
     passwordConfirmationGuard = new RequiresPasswordConfirmationToken(

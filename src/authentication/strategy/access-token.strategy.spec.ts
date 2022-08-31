@@ -40,7 +40,7 @@ describe(AccessTokenStrategy.name, () => {
     it('returns valid user data', async () => {
       expect(
         accessTokenStrategy.validate({ sub: user._id }),
-      ).resolves.toMatchObject({
+      ).resolves.toStrictEqual({
         id: user._id,
         username: user.username,
       });

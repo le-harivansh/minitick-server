@@ -18,7 +18,7 @@ describe(getUserFromRequest.name, () => {
   it('returns the user object attached to the request object', () => {
     expect(
       getUserFromRequest(undefined, mockExecutionContext(user)),
-    ).toMatchObject(user);
+    ).toStrictEqual(user);
   });
 
   it("returns the value of the specified property from the user's object", () => {

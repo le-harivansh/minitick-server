@@ -49,7 +49,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
           'env',
           configuration,
         ),
-      ).toMatchObject({
+      ).toStrictEqual({
         one: 'ONE',
         two: 'TWO',
         three: 'THREE',
@@ -62,7 +62,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
           'rules',
           configuration,
         ),
-      ).toMatchObject({
+      ).toStrictEqual({
         one: Joi.string(),
         two: Joi.number(),
         three: Joi.boolean(),
@@ -76,7 +76,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
           configuration,
           (value) => `ITEM-${value}`,
         ),
-      ).toMatchObject({
+      ).toStrictEqual({
         one: 'ITEM-ONE',
         two: 'ITEM-TWO',
         three: 'ITEM-THREE',
@@ -138,7 +138,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
           'env',
           configuration,
         ),
-      ).toMatchObject({
+      ).toStrictEqual({
         item_1: {
           property_1: 'ITEM_1_PROPERTY_1',
           property_2: 'ITEM_1_PROPERTY_2',
@@ -161,7 +161,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
           'rules',
           configuration,
         ),
-      ).toMatchObject({
+      ).toStrictEqual({
         item_1: {
           property_1: Joi.string(),
           property_2: Joi.boolean(),
@@ -185,7 +185,7 @@ describe(filterAndTransformConfigurationForProperty.name, () => {
           configuration,
           (value) => `VALUE: ${value}`,
         ),
-      ).toMatchObject({
+      ).toStrictEqual({
         item_1: {
           property_1: 'VALUE: ITEM_1_PROPERTY_1',
           property_2: 'VALUE: ITEM_1_PROPERTY_2',

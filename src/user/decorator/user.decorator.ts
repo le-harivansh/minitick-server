@@ -23,7 +23,7 @@ export function getUserFromRequest(
     );
   }
 
-  return !!property ? user[property] : user;
+  return property ? user[property] : user;
 }
 
 export const User = createParamDecorator(getUserFromRequest);

@@ -86,7 +86,7 @@ describe(RefreshTokenStrategy.name, () => {
         refreshTokenStrategy.validate(createRequest(plainRefreshTokens[1]), {
           sub: user._id,
         }),
-      ).resolves.toMatchObject({ id: user._id, username: user.username });
+      ).resolves.toStrictEqual({ id: user._id, username: user.username });
     });
 
     it("throws an UnauthorizedException if the provided user's id is invalid", () => {
