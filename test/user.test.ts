@@ -119,13 +119,6 @@ describe(UserController.name, () => {
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
-      it('cannot be accessed by a user lacking an access-token', () => {
-        return request(application.getHttpServer())
-          .patch('/user')
-          .set('Cookie', passwordConfirmationTokenCookieString)
-          .expect(HttpStatus.UNAUTHORIZED);
-      });
-
       it('cannot be accessed by a user lacking the password-confirmation token', () => {
         return request(application.getHttpServer())
           .patch('/user')
@@ -202,13 +195,6 @@ describe(UserController.name, () => {
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
-      it('cannot be accessed by a user lacking an access-token', () => {
-        return request(application.getHttpServer())
-          .delete('/user')
-          .set('Cookie', passwordConfirmationTokenCookieString)
-          .expect(HttpStatus.UNAUTHORIZED);
-      });
-
       it('cannot be accessed by a user lacking the password-confirmation token', () => {
         return request(application.getHttpServer())
           .delete('/user')
@@ -231,61 +217,22 @@ describe(UserController.name, () => {
             .expect(HttpStatus.NO_CONTENT);
         });
 
-        it('clears the access-token cookie', () => {
-          const accessTokenCookie = userDeleteResponse
-            .get('Set-Cookie')
-            .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN))[0];
+        it.each([ACCESS_TOKEN, REFRESH_TOKEN, PASSWORD_CONFIRMATION_TOKEN])(
+          "clears the '%s' cookie",
+          (tokenCookieName) => {
+            const tokenCookieString = userDeleteResponse
+              .get('Set-Cookie')
+              .filter((cookieString) =>
+                cookieString.startsWith(tokenCookieName),
+              )[0];
+            const tokenExpiryDate = parse(tokenCookieString)['Expires'];
 
-          const accessTokenCookieExpirationDate =
-            parse(accessTokenCookie)['Expires'];
-
-          expect(
-            new Date(accessTokenCookieExpirationDate) <= new Date(),
-          ).toBeTruthy();
-        });
-
-        it('clears the refresh-token cookie', () => {
-          const refreshTokenCookie = userDeleteResponse
-            .get('Set-Cookie')
-            .filter((cookieString) =>
-              cookieString.startsWith(REFRESH_TOKEN),
-            )[0];
-
-          const refreshTokenCookieExpirationDate =
-            parse(refreshTokenCookie)['Expires'];
-
-          expect(
-            new Date(refreshTokenCookieExpirationDate) <= new Date(),
-          ).toBeTruthy();
-        });
-
-        it('clears the password-confirmation-token cookie', () => {
-          const passwordConfirmationTokenCookie = userDeleteResponse
-            .get('Set-Cookie')
-            .filter((cookieString) =>
-              cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
-            )[0];
-
-          const passwordConfirmationTokenCookieExpirationDate = parse(
-            passwordConfirmationTokenCookie,
-          )['Expires'];
-
-          expect(
-            new Date(passwordConfirmationTokenCookieExpirationDate) <=
-              new Date(),
-          ).toBeTruthy();
-        });
+            expect(new Date(tokenExpiryDate) < new Date()).toBe(true);
+          },
+        );
       });
 
-      // @todo: FIX
-      /**
-       * The following test is failing while it should pass.
-       * The scenario is passing when manually testing, but it is failing here.
-       *
-       * It passes when the userId is converted to a Type.ObjectId object when
-       * filtering the tasks.
-       */
-      describe.skip('[delete associated tasks]', () => {
+      describe('[delete associated tasks]', () => {
         beforeEach(async () => {
           const tasks = ['Task #1', 'Task #2', 'Task #3'];
 
@@ -302,7 +249,17 @@ describe(UserController.name, () => {
             .expect(HttpStatus.NO_CONTENT);
         });
 
-        it('deletes any tasks associated to the user', () => {
+        // @todo: FIX
+        /**
+         * The following test is failing when it should pass.
+         * The scenario is passing when manually testing, but it is failing here.
+         *
+         * It passes when the userId is converted to a Type.ObjectId object when
+         * filtering the tasks.
+         *
+         * However, if this is done, the route breaks, and the unit tests fail.
+         */
+        it.skip('deletes any tasks associated to the user', () => {
           expect(taskModel.find({ userId }).exec()).resolves.toStrictEqual([]);
         });
       });

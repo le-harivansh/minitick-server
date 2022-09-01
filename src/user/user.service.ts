@@ -93,25 +93,21 @@ export class UserService {
   }
 
   async removeAllOtherHashedRefreshTokens(userId: string, except: string) {
-    const filteredHashedRefreshTokens: HashedRefreshToken[] = [];
     const { hashedRefreshTokens } = await this.findById(userId);
+
+    let exceptionHashedRefreshToken: HashedRefreshToken;
 
     for (const hashedRefreshToken of hashedRefreshTokens) {
       if (await verify(hashedRefreshToken.hash, except)) {
-        filteredHashedRefreshTokens.push(hashedRefreshToken);
+        exceptionHashedRefreshToken = hashedRefreshToken;
 
-        /**
-         * We know that hashed refresh-tokens are unique for every user.
-         * We can therefore break the loop after finding the first one -
-         * since it will be the only one that satisfies the `verify` predicate.
-         */
         break;
       }
     }
 
     await this.userModel
       .findByIdAndUpdate(userId, {
-        $set: { hashedRefreshTokens: filteredHashedRefreshTokens },
+        $set: { hashedRefreshTokens: [exceptionHashedRefreshToken] },
       })
       .exec();
   }

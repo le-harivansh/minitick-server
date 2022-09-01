@@ -71,35 +71,18 @@ describe(AuthenticationController.name, () => {
   });
 
   describe('/POST login', () => {
-    it('returns an access-token in a cookie', () => {
-      expect(
-        loginResponse
-          .get('Set-Cookie')
-          .filter((cookieString: string) =>
-            cookieString.startsWith(ACCESS_TOKEN),
-          ),
-      ).toHaveLength(1);
-    });
-
-    it('returns a refresh-token in a cookie', () => {
-      expect(
-        loginResponse
-          .get('Set-Cookie')
-          .filter((cookieString: string) =>
-            cookieString.startsWith(REFRESH_TOKEN),
-          ),
-      ).toHaveLength(1);
-    });
-
-    it('returns a password-confirmation-token in a cookie', () => {
-      expect(
-        loginResponse
-          .get('Set-Cookie')
-          .filter((cookieString: string) =>
-            cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
-          ),
-      ).toHaveLength(1);
-    });
+    it.each([ACCESS_TOKEN, REFRESH_TOKEN, PASSWORD_CONFIRMATION_TOKEN])(
+      "returns a(n) '%s' cookie",
+      (tokenCookieName) => {
+        expect(
+          loginResponse
+            .get('Set-Cookie')
+            .filter((cookieString: string) =>
+              cookieString.startsWith(tokenCookieName),
+            ),
+        ).toHaveLength(1);
+      },
+    );
 
     it('returns the expiry times of the returned: access-token, refresh-token & password-confirmation-token', () => {
       expect(loginResponse.body).toMatchObject(
@@ -183,47 +166,19 @@ describe(AuthenticationController.name, () => {
             .expect(HttpStatus.NO_CONTENT);
         });
 
-        it('clears the access-token cookie', () => {
-          const accessTokenCookieString = logoutResponse
-            .get('Set-Cookie')
-            .filter((cookieString) => cookieString.startsWith(ACCESS_TOKEN))[0];
+        it.each([ACCESS_TOKEN, REFRESH_TOKEN, PASSWORD_CONFIRMATION_TOKEN])(
+          "clears the '%s' cookie",
+          (tokenCookieName) => {
+            const tokenCookieString = logoutResponse
+              .get('Set-Cookie')
+              .filter((cookieString) =>
+                cookieString.startsWith(tokenCookieName),
+              )[0];
+            const tokenExpiryDate = parse(tokenCookieString)['Expires'];
 
-          const accessTokenExpiryDate = parse(accessTokenCookieString)[
-            'Expires'
-          ];
-
-          expect(new Date(accessTokenExpiryDate) < new Date()).toBeTruthy();
-        });
-
-        it('clears the refresh-token cookie', () => {
-          const refreshTokenCookieString = logoutResponse
-            .get('Set-Cookie')
-            .filter((cookieString) =>
-              cookieString.startsWith(REFRESH_TOKEN),
-            )[0];
-
-          const refreshTokenExpiryDate = parse(refreshTokenCookieString)[
-            'Expires'
-          ];
-
-          expect(new Date(refreshTokenExpiryDate) < new Date()).toBeTruthy();
-        });
-
-        it('clears the password-confirmation-token cookie', () => {
-          const passwordConfirmationCookieString = logoutResponse
-            .get('Set-Cookie')
-            .filter((cookieString) =>
-              cookieString.startsWith(PASSWORD_CONFIRMATION_TOKEN),
-            )[0];
-
-          const passwordConfirmationCookieTokenExpiryDate = parse(
-            passwordConfirmationCookieString,
-          )['Expires'];
-
-          expect(
-            new Date(passwordConfirmationCookieTokenExpiryDate) < new Date(),
-          ).toBeTruthy();
-        });
+            expect(new Date(tokenExpiryDate) < new Date()).toBe(true);
+          },
+        );
       });
 
       describe(`[scope = '${LogoutScope.OTHER_SESSIONS}']`, () => {

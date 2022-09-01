@@ -18,7 +18,7 @@ export class TaskService {
     return this.taskModel.findById(taskId).exec();
   }
 
-  async findAll(userId: string) {
+  async findAllForUser(userId: string) {
     return this.taskModel.find({ userId }).exec();
   }
 

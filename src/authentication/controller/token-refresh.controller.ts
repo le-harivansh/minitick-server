@@ -26,7 +26,7 @@ import { TokenRefreshService } from '../service/token-refresh.service';
 export class TokenRefreshController {
   constructor(
     private readonly authenticationService: AuthenticationService,
-    private readonly tokenService: TokenRefreshService,
+    private readonly tokenRefreshService: TokenRefreshService,
     private readonly userService: UserService,
   ) {}
 
@@ -37,7 +37,10 @@ export class TokenRefreshController {
     @User() user: RequestUser,
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {
-    return this.tokenService.attachAccessTokenCookieToResponse(user, response);
+    return this.tokenRefreshService.attachAccessTokenCookieToResponse(
+      user,
+      response,
+    );
   }
 
   @Get('refresh-token')
@@ -48,7 +51,7 @@ export class TokenRefreshController {
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {
     const { token: refreshToken, expiresAt } =
-      await this.tokenService.attachRefreshTokenCookieToResponse(
+      await this.tokenRefreshService.attachRefreshTokenCookieToResponse(
         user,
         response,
       );
@@ -76,7 +79,7 @@ export class TokenRefreshController {
       throw new ForbiddenException();
     }
 
-    return this.tokenService.attachPasswordConfirmationTokenCookieToResponse(
+    return this.tokenRefreshService.attachPasswordConfirmationTokenCookieToResponse(
       user,
       response,
     );

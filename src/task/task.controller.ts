@@ -33,7 +33,7 @@ export class TaskController {
 
   @Get('tasks')
   async findAll(@User('id') userId: string) {
-    return this.taskService.findAll(userId);
+    return this.taskService.findAllForUser(userId);
   }
 
   @Patch('task/:id')

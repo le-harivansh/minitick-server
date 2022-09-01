@@ -83,7 +83,7 @@ describe('TaskService', () => {
     });
   });
 
-  describe('findAll', () => {
+  describe('findAllForUser', () => {
     const userId = new ObjectId().toString();
     const tasks = ['Task #1', 'Task #2', 'Task #3'];
 
@@ -94,7 +94,7 @@ describe('TaskService', () => {
     });
 
     it('returns all the tasks associated to the specified userId', async () => {
-      const tasksFound = await taskService.findAll(userId);
+      const tasksFound = await taskService.findAllForUser(userId);
 
       expect(tasksFound.map(({ title }) => title)).toStrictEqual(tasks);
     });

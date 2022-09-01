@@ -2,7 +2,6 @@ import { ExecutionContext } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
 import { RequiresOwnership } from '../guard/task.guard';
-import { Task } from '../schema/task.schema';
 import { TaskService } from '../task.service';
 
 describe(RequiresOwnership.name, () => {

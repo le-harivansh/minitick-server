@@ -29,7 +29,7 @@ import { TokenRefreshService } from '../service/token-refresh.service';
 export class AuthenticationController {
   constructor(
     private readonly userService: UserService,
-    private readonly tokenService: TokenRefreshService,
+    private readonly tokenRefreshService: TokenRefreshService,
   ) {}
 
   @Post('login')
@@ -40,10 +40,13 @@ export class AuthenticationController {
     @Response({ passthrough: true }) response: ExpressResponse,
   ) {
     const { expiresAt: accessTokenExpiresAt } =
-      await this.tokenService.attachAccessTokenCookieToResponse(user, response);
+      await this.tokenRefreshService.attachAccessTokenCookieToResponse(
+        user,
+        response,
+      );
 
     const { token: refreshToken, expiresAt: refreshTokenExpiresAt } =
-      await this.tokenService.attachRefreshTokenCookieToResponse(
+      await this.tokenRefreshService.attachRefreshTokenCookieToResponse(
         user,
         response,
       );
@@ -51,7 +54,7 @@ export class AuthenticationController {
     await this.userService.saveHashedRefreshToken(user.id, refreshToken);
 
     const { expiresAt: passwordConfirmationTokenExpiresAt } =
-      await this.tokenService.attachPasswordConfirmationTokenCookieToResponse(
+      await this.tokenRefreshService.attachPasswordConfirmationTokenCookieToResponse(
         user,
         response,
       );
@@ -84,7 +87,7 @@ export class AuthenticationController {
       );
     }
 
-    // At this point, we know that: scope == LogoutScope.CURRENT_SESSION
+    // At this point, we know that: scope === LogoutScope.CURRENT_SESSION
 
     /**
      * If the user has an access-token, it is implied that it has a refresh-token too.
