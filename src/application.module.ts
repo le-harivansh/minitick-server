@@ -6,6 +6,7 @@ import { AuthenticationModule } from './authentication/authentication.module';
 import { CookieModule } from './cookie/cookie.module';
 import { DatabaseModule } from './database/database.module';
 import { RegistrationModule } from './registration/registration.module';
+import { TaskModule } from './task/task.module';
 import { UserModule } from './user/user.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     RegistrationModule,
     AuthenticationModule,
+    TaskModule,
   ],
 })
 export class ApplicationModule {}

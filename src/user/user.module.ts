@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { TaskModule } from '../task/task.module';
 import { User, UserSchema } from './schema/user.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
@@ -13,6 +14,7 @@ import { UsernameIsUniqueValidatorConstraint } from './validator/username-is-uni
     ConfigModule,
     JwtModule,
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    TaskModule,
   ],
   providers: [UserService, UsernameIsUniqueValidatorConstraint],
   exports: [UserService],
