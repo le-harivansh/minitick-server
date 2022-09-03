@@ -76,7 +76,7 @@ export class TokenRefreshController {
         password,
       ))
     ) {
-      throw new ForbiddenException();
+      throw new ForbiddenException('Invalid password provided.');
     }
 
     return this.tokenRefreshService.attachPasswordConfirmationTokenCookieToResponse(
