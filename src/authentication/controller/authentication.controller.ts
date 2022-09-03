@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   HttpCode,
   HttpStatus,
   Post,
@@ -68,7 +67,7 @@ export class AuthenticationController {
     };
   }
 
-  @Delete('logout')
+  @Post('logout')
   @UseGuards(RequiresAccessToken)
   @UsePipes(ValidationPipe)
   @HttpCode(HttpStatus.NO_CONTENT)

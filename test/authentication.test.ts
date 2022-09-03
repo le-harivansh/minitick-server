@@ -105,7 +105,7 @@ describe(AuthenticationController.name, () => {
     describe('[fails because]', () => {
       it('cannot be accessed by an unauthentiated user', () => {
         return request(application.getHttpServer())
-          .delete('/logout')
+          .post('/logout')
           .expect(HttpStatus.UNAUTHORIZED);
       });
 
@@ -117,7 +117,7 @@ describe(AuthenticationController.name, () => {
           )[0];
 
         return request(application.getHttpServer())
-          .delete('/logout')
+          .post('/logout')
           .set('Cookie', currentAccessTokenCookieString)
           .send({ scope: 'invalid-scope' })
           .expect(HttpStatus.BAD_REQUEST);
@@ -147,7 +147,7 @@ describe(AuthenticationController.name, () => {
 
         beforeEach(async () => {
           logoutResponse = await request(application.getHttpServer())
-            .delete('/logout')
+            .post('/logout')
             .set('Cookie', [
               currentAccessTokenCookieString,
               currentRefreshTokenCookieString,
@@ -157,7 +157,7 @@ describe(AuthenticationController.name, () => {
 
         it(`returns the 'no-content' http-status code when scope is manually set to '${LogoutScope.CURRENT_SESSION}'`, () => {
           return request(application.getHttpServer())
-            .delete('/logout')
+            .post('/logout')
             .set('Cookie', [
               currentAccessTokenCookieString,
               currentRefreshTokenCookieString,
@@ -184,7 +184,7 @@ describe(AuthenticationController.name, () => {
       describe(`[scope = '${LogoutScope.OTHER_SESSIONS}']`, () => {
         it("returns the 'no-content' http-status code", () => {
           return request(application.getHttpServer())
-            .delete('/logout')
+            .post('/logout')
             .set('Cookie', [
               currentAccessTokenCookieString,
               currentRefreshTokenCookieString,
