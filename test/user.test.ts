@@ -163,26 +163,15 @@ describe(UserController.name, () => {
         password: 'updated-password-001',
       };
 
-      let userUpdateResponse: Response;
-
-      beforeEach(async () => {
-        userUpdateResponse = await request(application.getHttpServer())
+      it("returns the 'no-content' http-status", () => {
+        return request(application.getHttpServer())
           .patch('/user')
           .set('Cookie', [
             accessTokenCookieString,
             passwordConfirmationTokenCookieString,
           ])
           .send(updatedUserCredentials)
-          .expect(HttpStatus.OK);
-      });
-
-      it("returns the updated user's data", () => {
-        expect(userUpdateResponse.body).toMatchObject(
-          expect.objectContaining({
-            id: expect.any(String),
-            username: updatedUserCredentials.username,
-          }),
-        );
+          .expect(HttpStatus.NO_CONTENT);
       });
     });
   });

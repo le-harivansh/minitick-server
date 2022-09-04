@@ -38,19 +38,12 @@ export class UserController {
   @Patch()
   @UseGuards(RequiresAccessToken, RequiresPasswordConfirmationToken)
   @UsePipes(ValidationPipe)
+  @HttpCode(HttpStatus.NO_CONTENT)
   async update(
     @User('id') userId: string,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<RequestUser> {
-    const updatedUser = await this.userService.updateUser(
-      userId,
-      updateUserDto,
-    );
-
-    return {
-      id: updatedUser._id,
-      username: updatedUser.username,
-    };
+  ) {
+    await this.userService.updateUser(userId, updateUserDto);
   }
 
   @Delete()

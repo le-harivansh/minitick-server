@@ -35,7 +35,7 @@ export class UserService {
     userId: string,
     { password, ...userData }: Partial<Omit<User, 'hashedRefreshTokens'>>,
   ) {
-    return this.userModel
+    await this.userModel
       .findByIdAndUpdate(
         userId,
         {
