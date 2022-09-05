@@ -17,8 +17,8 @@ import { User } from '../../user/decorator/user.decorator';
 import { RequestUser } from '../../user/schema/user.schema';
 import { UserService } from '../../user/user.service';
 import { RegeneratePasswordConfirmationTokenDto } from '../dto/regenerate-password-confirmation-token.dto';
-import { RequiresAccessToken } from '../guard/access-token.guard';
-import { RequiresRefreshToken } from '../guard/refresh-token.guard';
+import { RequiresAccessToken } from '../guard/requires-access-token.guard';
+import { RequiresRefreshToken } from '../guard/requires-refresh-token.guard';
 import { AuthenticationService } from '../service/authentication.service';
 import { TokenRefreshService } from '../service/token-refresh.service';
 

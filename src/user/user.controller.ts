@@ -13,8 +13,8 @@ import {
 } from '@nestjs/common';
 import { Response as ExpressResponse } from 'express';
 
-import { RequiresAccessToken } from '../authentication/guard/access-token.guard';
-import { RequiresPasswordConfirmationToken } from '../authentication/guard/password-confirmation.guard';
+import { RequiresAccessToken } from '../authentication/guard/requires-access-token.guard';
+import { RequiresPasswordConfirmationToken } from '../authentication/guard/requires-password-confirmation-token.guard';
 import { TokenRefreshService } from '../authentication/service/token-refresh.service';
 import { TaskService } from '../task/task.service';
 import { User } from './decorator/user.decorator';

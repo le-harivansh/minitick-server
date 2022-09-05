@@ -13,11 +13,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 
-import { RequiresAccessToken } from '../authentication/guard/access-token.guard';
+import { RequiresAccessToken } from '../authentication/guard/requires-access-token.guard';
 import { User } from '../user/decorator/user.decorator';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { RequiresOwnership } from './guard/task.guard';
+import { RequiresOwnership } from './guard/requires-ownership.guard';
 import { TaskService } from './task.service';
 
 @Controller()

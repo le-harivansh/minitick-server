@@ -20,8 +20,8 @@ import { User } from '../../user/decorator/user.decorator';
 import { UserService } from '../../user/user.service';
 import { REFRESH_TOKEN } from '../constants';
 import { LogoutDto, LogoutScope } from '../dto/logout.dto';
-import { RequiresAccessToken } from '../guard/access-token.guard';
 import { RequiresCredentials } from '../guard/local.guard';
+import { RequiresAccessToken } from '../guard/requires-access-token.guard';
 import { TokenRefreshService } from '../service/token-refresh.service';
 
 @Controller()

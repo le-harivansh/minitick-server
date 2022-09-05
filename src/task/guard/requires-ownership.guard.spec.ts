@@ -1,8 +1,8 @@
 import { ExecutionContext } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
-import { RequiresOwnership } from '../guard/task.guard';
 import { TaskService } from '../task.service';
+import { RequiresOwnership } from './requires-ownership.guard';
 
 describe(RequiresOwnership.name, () => {
   const generateExecutionContext = (

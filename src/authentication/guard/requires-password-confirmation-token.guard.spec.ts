@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 
 import { RequestUser } from '../../user/schema/user.schema';
 import { PASSWORD_CONFIRMATION_TOKEN } from '../constants';
-import { RequiresPasswordConfirmationToken } from './password-confirmation.guard';
+import { RequiresPasswordConfirmationToken } from './requires-password-confirmation-token.guard';
 
 describe(RequiresPasswordConfirmationToken.name, () => {
   const userData = [

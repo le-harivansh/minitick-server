@@ -44,16 +44,16 @@ export class RefreshTokenStrategy extends PassportStrategy(
     const retrievedUser = await this.userService.findById(authenticatedUserId);
 
     if (
-      !retrievedUser ||
-      !(await RefreshTokenStrategy.tokenIsValid(
+      retrievedUser &&
+      (await RefreshTokenStrategy.tokenIsValid(
         request.signedCookies[REFRESH_TOKEN],
         retrievedUser.hashedRefreshTokens.map(({ hash }) => hash),
       ))
     ) {
-      throw new UnauthorizedException();
+      return { id: authenticatedUserId, username: retrievedUser.username };
     }
 
-    return { id: authenticatedUserId, username: retrievedUser.username };
+    throw new UnauthorizedException();
   }
 
   private static async tokenIsValid(
