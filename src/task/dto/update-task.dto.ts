@@ -13,7 +13,10 @@ export class UpdateTaskDto {
    * Its only purpose is to throw an error if ALL of the above properties are
    * empty.
    */
-  @ValidateIf(({ title, isComplete }: UpdateTaskDto) => !(title || isComplete))
+  @ValidateIf(
+    ({ title, isComplete }: UpdateTaskDto) =>
+      title === undefined && isComplete === undefined,
+  )
   @IsNotEmpty({
     message: "Provide either the task's title or status to be updated.",
   })

@@ -217,6 +217,7 @@ describe(TaskController.name, () => {
       it.each<UpdateTaskDto>([
         { title: 'Task #1001' },
         { isComplete: true },
+        { isComplete: false },
         { title: 'Task #2002', isComplete: true },
       ])(
         "updates the task's data [$title, $isComplete]",
