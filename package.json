@@ -1,6 +1,6 @@
 {
   "name": "minitick-server",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "The server of the minitick application.",
   "keywords": [
     "minitick",
